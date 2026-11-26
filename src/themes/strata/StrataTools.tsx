@@ -9,11 +9,11 @@ import { paintWellLog } from './renderer'
 export const FORMATIONS = ['Holocene', 'Pleistocene', 'Pliocene', 'Miocene'] as const
 const WELL_LOG = { width: 96, height: 168 } as const
 
-export default function StrataTools({ active }: { active: ModuleId }) {
+export default function StrataTools({ active, closing }: { active: ModuleId; closing: boolean }) {
   const actions = useOSActions()
   const index = modules.findIndex((module) => module.id === active)
   const { label } = modules[index]
-  return <section className="strata-gallery" data-tool={active} aria-label={label} key={active}>
+  return <section className="strata-gallery" data-tool={active} aria-label={label} key={active} inert={closing}>
     <div className="strata-face">
       <header className="strata-gallery-head">
         <p>Gallery 0{index + 1} · {FORMATIONS[index]}</p>

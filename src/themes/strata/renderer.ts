@@ -1,4 +1,4 @@
-import { CORE_X, FAULT_X, LITHOLOGIES, METRES_PER_PX, SECTION, SURFACE, boundaryAt, deform, gallery, veneerThickness } from './sediment'
+import { CORE_X, FAULT_X, LITHOLOGIES, METRES_PER_PX, SECTION, SURFACE, boundaryAt, deform, excavation, veneerThickness } from './sediment'
 import type { Strata } from './sediment'
 
 const WATER_TOP = '#F1EADA'
@@ -80,8 +80,9 @@ function trace(ctx: CanvasRenderingContext2D, strata: Strata, index: number, rev
 
 export function paintStrata(ctx: CanvasRenderingContext2D, strata: Strata, view: View) {
   const height = SECTION.bottom - SECTION.top
-  const opened = gallery(strata)
   const { ink, chalk } = patternsFor(ctx)
+  // Every bed reports how far it is excavated, so a gallery being backfilled darkens and closes with its rock.
+  const opening = Array.from({ length: strata.beds }, (_, bed) => excavation(strata, bed).open)
 
   // Water column, with grains settling onto the surface.
   const water = ctx.createLinearGradient(0, 0, 0, SECTION.top)
@@ -103,7 +104,7 @@ export function paintStrata(ctx: CanvasRenderingContext2D, strata: Strata, view:
     trace(ctx, strata, bed + 1, true)
     ctx.closePath()
     const depth = ((strata.base[bed] + strata.base[bed + 1]) / 2 - SECTION.top) / height
-    const excavated = opened?.bed === bed ? opened.open : 0
+    const excavated = opening[bed]
     const rock = ramp(depth, strata.tone[bed])
     ctx.fillStyle = excavated ? rgb(rock.map((value, channel) => value + (VOID[channel] - value) * excavated)) : rgb(rock)
     ctx.fill()
@@ -133,7 +134,7 @@ export function paintStrata(ctx: CanvasRenderingContext2D, strata: Strata, view:
   ctx.lineJoin = 'round'
   for (let index = 0; index <= strata.beds; index++) {
     const depth = (strata.base[index] - SECTION.top) / height
-    const cut = opened && opened.open > .02 && (index === opened.bed || index === opened.bed + 1)
+    const cut = (opening[index] ?? 0) > .02 || (opening[index - 1] ?? 0) > .02
     ctx.beginPath()
     trace(ctx, strata, index, false)
     ctx.strokeStyle = cut ? OXIDE : depth < .55 ? `rgb(30 22 16 / ${.62 - depth * .5})` : `rgb(237 227 207 / ${.12 + depth * .22})`

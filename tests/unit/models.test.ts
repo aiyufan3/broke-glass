@@ -10,8 +10,8 @@ import {
   profile, profileRange, project, relief, restSweep, retrigger, shot, traceStats,
 } from '../../src/themes/telemetry/signal'
 import {
-  FAULT_X, GALLERY, LITHOLOGIES, MAX_BEDS, METRES_PER_PX, MIN_BEDS, MODULE_BEDS, SECTION, SPAN_KA, boundaryAt, createStrata, deposit, gallery,
-  moduleBed, reading, restBoundaries, settleStrata, stepStrata, veneerThickness,
+  CORE_X, FAULT_X, GALLERY, LITHOLOGIES, MAX_BEDS, METRES_PER_PX, MIN_BEDS, MODULE_BEDS, SECTION, SPAN_KA, boundaryAt, createStrata, deform, deposit,
+  excavation, gallery, moduleBed, reading, restBoundaries, settleStrata, stepStrata, undeform, veneerThickness,
 } from '../../src/themes/strata/sediment'
 import type { Strata, StrataInputs } from '../../src/themes/strata/sediment'
 import { CORE, NUCLEUS, PULSE_HOLD_MS, bezierPoint, bezierTangent, createTissue, firePulse, settleTissue, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
@@ -502,8 +502,50 @@ describe('StrataOS · sediment', () => {
     const strata = settled({ selected: 2 })
     run(strata, rest, 2.5)
     restBoundaries(16, .45).forEach((depth, index) => expect(strata.base[index]).toBeCloseTo(depth, 2))
-    expect(strata.open).toBeLessThan(1e-3)
+    expect(excavation(strata, moduleBed(16, 2)).open).toBeLessThan(1e-3)
     expect(strata.drill).toBeCloseTo(SECTION.top, 2)
+  })
+
+  test('backfill and a switch of formation close the old gallery continuously, never in one step', () => {
+    const strata = settled({ selected: 0 })
+    const first = moduleBed(16, 0)
+    const second = moduleBed(16, 3)
+    expect(excavation(strata, first).open).toBe(1)
+    let previous = { first: 1, second: 0 }
+    for (let step = 0; step < steps(1.5); step++) {
+      stepStrata(strata, { ...rest, selected: 3 }, FRAME)
+      const now = { first: excavation(strata, first).open, second: excavation(strata, second).open }
+      expect(now.first).toBeLessThanOrEqual(previous.first)
+      expect(previous.first - now.first).toBeLessThan(.12)
+      expect(now.second).toBeGreaterThanOrEqual(previous.second)
+      expect(now.second - previous.second).toBeLessThan(.12)
+      previous = now
+    }
+    expect(previous).toEqual({ first: 0, second: expect.closeTo(1, 2) })
+    stepStrata(strata, rest, FRAME)
+    expect(excavation(strata, second).open).toBeGreaterThan(.9)
+  })
+
+  test('the core reading names the formation the bit rests in', () => {
+    for (const beds of [MIN_BEDS, 16, MAX_BEDS]) {
+      for (let module = 0; module < MODULE_BEDS; module++) {
+        const strata = settled({ beds, selected: module })
+        expect(reading(strata, strata.drill).bed).toBe(moduleBed(beds, module))
+      }
+    }
+  })
+
+  test('the probe reads the depth scale as it is drawn, through the fold and the fault', () => {
+    const strata = settled({ fold: 1, stress: true })
+    deposit(strata, 1)
+    stepStrata(strata, { ...rest, fold: 1, stress: true }, .2)
+    for (const depth of [SECTION.top + 20, 400, 650, SECTION.bottom - 5]) {
+      for (const x of [10, 150, CORE_X]) expect(undeform(strata, deform(strata, depth, x), x)).toBeCloseTo(depth, 6)
+    }
+    for (const metres of [25, 50, 100]) {
+      const tick = deform(strata, SECTION.top + metres / METRES_PER_PX, CORE_X)
+      expect(reading(strata, undeform(strata, tick, CORE_X)).metres).toBeCloseTo(metres, 6)
+    }
   })
 
   test('a new bed count lays down a new section without losing the excavation in progress', () => {

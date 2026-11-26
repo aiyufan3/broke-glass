@@ -7,7 +7,7 @@ import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions } from '../../state/osStore'
 import StrataTools, { FORMATIONS } from './StrataTools'
 import { paintStrata } from './renderer'
-import { SECTION, SPAN_KA, SURFACE, createStrata, deposit, gallery, moduleBed, reading, settleStrata, stepStrata } from './sediment'
+import { CORE_X, SECTION, SPAN_KA, SURFACE, createStrata, deposit, excavation, moduleBed, reading, settleStrata, stepStrata, undeform } from './sediment'
 import './strata.css'
 
 // How much sediment each kind of event lands on the surface, and how hard its shear wave shakes the column.
@@ -18,7 +18,8 @@ export default function StrataOS({ interactive }: ParadigmProps) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const launchers = useRef<(HTMLButtonElement | null)[]>([])
   const readout = useRef<HTMLOutputElement>(null)
-  const probeDepth = useRef<number | null>(null)
+  /** Screen height of the operator's probe, or null when the pointer is outside the section. */
+  const probeY = useRef<number | null>(null)
   const trigger = useRef<HTMLButtonElement | null>(null)
   const written = useRef<Record<string, string>>({})
   const [strata] = useState(createStrata)
@@ -28,6 +29,11 @@ export default function StrataOS({ interactive }: ParadigmProps) {
   const impulse = useOS((state) => state.impulse, interactive)
   const actions = useOSActions()
   const selected = active ? modules.findIndex((module) => module.id === active) : -1
+  // A backfilled gallery keeps its tool, inert, until the rock has closed over it.
+  const [backfilling, setBackfilling] = useState<ModuleId | null>(null)
+  const shown = active ?? backfilling
+  const shownIndex = shown ? modules.findIndex((module) => module.id === shown) : -1
+  useEffect(() => { if (active) setBackfilling(active) }, [active])
 
   function write(key: string, value: string, apply: (value: string) => void) {
     if (written.current[key] === value) return
@@ -40,7 +46,7 @@ export default function StrataOS({ interactive }: ParadigmProps) {
     if (still) settleStrata(strata, inputs)
     else stepStrata(strata, inputs, delta / 1000)
     const context = surface(canvas.current, SURFACE.width, SURFACE.height, ratio)
-    if (context) paintStrata(context, strata, { probe: probeDepth.current })
+    if (context) paintStrata(context, strata, { probe: probeY.current })
 
     // Each formation's label rides the middle of its own bed.
     modules.forEach((_, index) => {
@@ -49,21 +55,25 @@ export default function StrataOS({ interactive }: ParadigmProps) {
       const element = launchers.current[index]
       if (element) write(`bed${index}`, `0 ${centre.toFixed(1)}px`, (value) => { element.style.translate = value })
     })
-    const opened = gallery(strata)
+    // The gallery element follows the bed of the tool on show, open or closing, as the model reports it.
+    const opened = shownIndex >= 0 ? excavation(strata, moduleBed(strata.beds, shownIndex)) : null
     const style = host.current?.style
     if (style) {
       write('top', `${(opened?.top ?? SECTION.top).toFixed(1)}px`, (value) => style.setProperty('--strata-top', value))
       write('height', `${Math.max(0, (opened?.bottom ?? SECTION.top) - (opened?.top ?? SECTION.top)).toFixed(1)}px`, (value) => style.setProperty('--strata-height', value))
-      write('open', strata.open.toFixed(3), (value) => style.setProperty('--strata-open', value))
+      write('open', (opened?.open ?? 0).toFixed(3), (value) => style.setProperty('--strata-open', value))
     }
-    const probe = probeDepth.current ?? strata.drill
-    const at = reading(strata, probe)
-    const source = probeDepth.current === null ? 'Core' : 'Probe'
+    if (!active && opened && opened.open < .01) setBackfilling(null)
+
+    // The probe reads the depth scale where it is drawn, at the core, through the fold and the fault.
+    const probing = probeY.current === null ? null : undeform(strata, probeY.current, CORE_X)
+    const at = reading(strata, probing ?? strata.drill)
+    const source = probing === null ? 'Core' : 'Probe'
     const element = readout.current
     if (element) write('readout', `${source} ${at.metres.toFixed(1).padStart(5, '0')} m · ${at.ka.toFixed(1)} ka · bed ${String(at.bed + 1).padStart(2, '0')}/${strata.beds}`, (value) => { element.textContent = value })
   })
 
-  useEffect(invalidate, [invalidate, beds, compaction, fold, stress, selected])
+  useEffect(invalidate, [invalidate, beds, compaction, fold, stress, selected, shownIndex])
 
   const seenImpulse = useRef(impulse.seq)
   useEffect(() => {
@@ -86,13 +96,14 @@ export default function StrataOS({ interactive }: ParadigmProps) {
   function probe(event: PointerEvent<HTMLElement>) {
     if (!interactive || event.pointerType === 'touch') return
     const bounds = event.currentTarget.getBoundingClientRect()
-    const depth = (event.clientY - bounds.top) * SURFACE.height / bounds.height
-    probeDepth.current = depth > SECTION.top && depth < SECTION.bottom ? depth : null
+    const y = (event.clientY - bounds.top) * SURFACE.height / bounds.height
+    const depth = undeform(strata, y, CORE_X)
+    probeY.current = depth > SECTION.top && depth < SECTION.bottom ? y : null
     invalidate()
   }
 
   return <section ref={host} className="strata-os" aria-label="StrataOS geological section" data-active={active ?? undefined} data-stress={stress}
-    onPointerMove={probe} onPointerLeave={() => { probeDepth.current = null; invalidate() }}>
+    onPointerMove={probe} onPointerLeave={() => { probeY.current = null; invalidate() }}>
     <canvas className="strata-section" ref={canvas} aria-hidden="true" />
     <header className="strata-head">
       <p><span>Lab / 06 · Stratigraphic section</span><span>{SPAN_KA} ka · {beds} beds</span></p>
@@ -111,6 +122,6 @@ export default function StrataOS({ interactive }: ParadigmProps) {
         <small>0{index + 1} · {FORMATIONS[index]}</small><strong>{module.label}</strong>
       </button>)}
     </nav>
-    {active && <StrataTools active={active} />}
+    {shown && <StrataTools active={shown} closing={!active} />}
   </section>
 }

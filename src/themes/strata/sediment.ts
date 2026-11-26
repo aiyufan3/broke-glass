@@ -36,10 +36,10 @@ type Wave = { age: number; gain: number }
 
 export type Strata = {
   beds: number
+  compaction: number
   selected: number
   /** Undeformed depth of every bed boundary, surface first. beds + 1 entries, strictly increasing. */
   base: number[]
-  open: number
   drill: number
   fold: number
   fault: number
@@ -88,7 +88,7 @@ function seatGrains(strata: Strata) {
 export function createStrata(): Strata {
   const random = seeded(1859)
   const strata: Strata = {
-    beds: 0, selected: -1, base: [], open: 0, drill: SECTION.top, fold: 0, fault: 0, veneer: null, waves: [], tremor: TREMOR_SECONDS,
+    beds: 0, compaction: 0, selected: -1, base: [], drill: SECTION.top, fold: 0, fault: 0, veneer: null, waves: [], tremor: TREMOR_SECONDS,
     lithology: Uint8Array.from({ length: MAX_BEDS }, () => Math.floor(random() * LITHOLOGIES)),
     tone: Float32Array.from({ length: MAX_BEDS }, () => random() * 2 - 1),
     grainX: new Float32Array(GRAINS), grainY: new Float32Array(GRAINS), grainRate: new Float32Array(GRAINS),
@@ -188,23 +188,36 @@ export function deposit(strata: Strata, gain: number) {
   strata.waves.push({ age: 0, gain })
 }
 
-/** The excavated gallery now: its edges follow the boundaries of the selected bed. */
+/**
+ * How far a bed is excavated, read from the geometry itself: 0 at its rest thickness, 1 once it spans a
+ * full gallery. A bed being backfilled, or one closing while another opens, reports its true state.
+ */
+export function excavation(strata: Strata, bed: number) {
+  const rest = restBoundaries(strata.beds, strata.compaction)
+  const full = excavated(rest, bed)
+  const resting = rest[bed + 1] - rest[bed]
+  const span = full[bed + 1] - full[bed] - resting
+  const top = strata.base[bed]
+  const bottom = strata.base[bed + 1]
+  return { bed, top, bottom, open: span > 0 ? clamp((bottom - top - resting) / span, 0, 1) : 0 }
+}
+
+/** The gallery of the selected formation, or null when no formation is selected. */
 export function gallery(strata: Strata) {
-  if (strata.selected < 0) return null
-  const bed = moduleBed(strata.beds, strata.selected)
-  return { bed, top: strata.base[bed], bottom: strata.base[bed + 1], open: strata.open }
+  return strata.selected < 0 ? null : excavation(strata, moduleBed(strata.beds, strata.selected))
 }
 
 function relayout(strata: Strata, inputs: StrataInputs) {
+  const opened = strata.base.length && strata.selected >= 0 ? excavation(strata, moduleBed(strata.beds, strata.selected)).open : 0
   strata.selected = inputs.selected
   strata.fold = inputs.fold
-  if (inputs.beds === strata.beds) return false
+  strata.compaction = inputs.compaction
+  if (inputs.beds === strata.beds) return
   strata.beds = inputs.beds
-  // A new bed count is a new section: it is laid down at once rather than tweened from the old one.
+  // A new bed count is a new section: it is laid down at once, keeping the excavation as far open as it was.
   const closed = restBoundaries(strata.beds, inputs.compaction)
   const target = targets(strata, inputs.compaction)
-  strata.base = closed.map((depth, index) => depth + (target[index] - depth) * strata.open)
-  return true
+  strata.base = closed.map((depth, index) => depth + (target[index] - depth) * opened)
 }
 
 export function stepStrata(strata: Strata, inputs: StrataInputs, seconds: number) {
@@ -213,7 +226,6 @@ export function stepStrata(strata: Strata, inputs: StrataInputs, seconds: number
   const settle = 1 - Math.exp(-seconds / SETTLE_SECONDS)
   const target = targets(strata, inputs.compaction)
   strata.base = strata.base.map((depth, index) => depth + (target[index] - depth) * settle)
-  strata.open += ((strata.selected >= 0 ? 1 : 0) - strata.open) * settle
   strata.drill += (drillTarget(strata, inputs.compaction) - strata.drill) * (1 - Math.exp(-seconds / DRILL_SECONDS))
   strata.fault += ((inputs.stress ? 1 : 0) - strata.fault) * (1 - Math.exp(-seconds / .35))
 
@@ -237,7 +249,6 @@ export function stepStrata(strata: Strata, inputs: StrataInputs, seconds: number
 export function settleStrata(strata: Strata, inputs: StrataInputs) {
   relayout(strata, inputs)
   strata.base = targets(strata, inputs.compaction)
-  strata.open = strata.selected >= 0 ? 1 : 0
   strata.drill = drillTarget(strata, inputs.compaction)
   strata.fault = inputs.stress ? 1 : 0
   strata.veneer = null
@@ -246,10 +257,26 @@ export function settleStrata(strata: Strata, inputs: StrataInputs) {
   seatGrains(strata)
 }
 
+/**
+ * The undeformed depth drawn at screen height `y` in column `x`: the inverse of deform. Every term of
+ * deform increases with depth, so bisection converges on the one depth that lands there.
+ */
+export function undeform(strata: Strata, y: number, x: number) {
+  let low = SECTION.top - HEIGHT
+  let high = SECTION.bottom + HEIGHT
+  for (let pass = 0; pass < 48; pass++) {
+    const middle = (low + high) / 2
+    if (deform(strata, middle, x) < y) low = middle
+    else high = middle
+  }
+  return (low + high) / 2
+}
+
 /** Depth below the surface in metres, and the age of the sediment there in thousands of years. */
 export function reading(strata: Strata, depth: number) {
   const below = Math.max(0, depth - SECTION.top)
-  const next = strata.base.findIndex((boundary) => boundary > depth)
+  // A depth on a horizon belongs to the bed above it: the core bit resting on a gallery floor is in that gallery.
+  const next = strata.base.findIndex((boundary) => boundary >= depth)
   const bed = next < 0 ? strata.beds - 1 : Math.max(0, next - 1)
   const top = strata.base[bed] ?? SECTION.top
   const bottom = strata.base[bed + 1] ?? SECTION.bottom
