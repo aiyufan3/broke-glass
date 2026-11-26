@@ -1,11 +1,11 @@
-import { expect, test } from '@playwright/test'
-import { BODY_HOMES, CORE, HORIZON, createField, probeReading, settleField, stepField } from '../src/themes/field/potential'
-import type { FieldInputs } from '../src/themes/field/potential'
-import { COORDINATES, createCloud, encodeBits, settleCloud } from '../src/themes/quantum/cloud'
-import { APERTURE, EYE, SLAB, SLABS, SURFACE, createFlight, settleFlight, toScreen, toView } from '../src/themes/spatial/camera'
-import { acquiredPass, advanceSweep, createSweep, sweepSeconds } from '../src/themes/telemetry/signal'
-import { createTissue, membranePoint, stepTissue, vesselCurve } from '../src/themes/wetware/tissue'
-import type { Cell, Vec } from '../src/themes/wetware/tissue'
+import { expect, test } from 'vitest'
+import { BODY_HOMES, CORE, HORIZON, createField, probeReading, settleField, stepField } from '../../src/themes/field/potential'
+import type { FieldInputs } from '../../src/themes/field/potential'
+import { COORDINATES, createCloud, encodeBits, settleCloud } from '../../src/themes/quantum/cloud'
+import { APERTURE, EYE, SLAB, SLABS, SURFACE, createFlight, settleFlight, toScreen, toView } from '../../src/themes/spatial/camera'
+import { acquiredPass, advanceSweep, createSweep, sweepSeconds } from '../../src/themes/telemetry/signal'
+import { createTissue, membranePoint, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
+import type { Cell, Vec } from '../../src/themes/wetware/tissue'
 
 const FRAME_MS = 1000 / 60
 const rest: FieldInputs = { warp: .58, levels: 30, drift: 0, stress: false, selected: -1 }

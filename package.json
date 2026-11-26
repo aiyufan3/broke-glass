@@ -25,7 +25,9 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "test": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "silhouettes": "node scripts/silhouettes.mjs",
     "posters": "node scripts/posters.mjs",
     "screens": "node scripts/screens.mjs",
@@ -49,8 +51,10 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^5.1.1",
     "tailwindcss": "^4.1.0",
     "typescript": "~5.9.3",
-    "vite": "^7.3.8"
+    "vite": "^7.3.8",
+    "vitest": "^5.1.1"
   }
 }

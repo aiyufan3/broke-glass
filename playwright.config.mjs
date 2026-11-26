@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
+  // Pure-function suites run under Vitest (npm run test:unit); Playwright owns the browser.
+  testIgnore: '**/unit/**',
   fullyParallel: false,
   use: {
     baseURL: process.env.SHOWCASE_URL || 'http://127.0.0.1:5173',
