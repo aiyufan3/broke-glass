@@ -122,8 +122,8 @@ If the new column reads as one of the existing five, it is not a new paradigm.
 **Gates**
 
 1. Add the three controls to `all fifteen engine controls change what their engine draws`, and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
-2. Add at least one invariant of the model to `tests/physics.spec.ts`. `tests/registry.spec.ts` checks the specification itself.
-3. `npm run typecheck && npm run build && npm test`. No errors. No warnings.
+2. Add at least one invariant of the model to `tests/unit/physics.test.ts`. `tests/unit/registry.test.ts` checks the specification itself. Every `src/themes/*/*.ts` model file must keep 90 % line, statement and function coverage and 75 % branch coverage on its own; an engine without tests fails the gate.
+3. `npm run typecheck && npm run build && npm test`. No errors. No warnings. CI runs the same gates before anything is deployed.
 
 </details>
 
@@ -149,7 +149,7 @@ All five draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts descri
 
 <br>
 
-Node **20.19+** or **22.12+**.
+Node **20.19+** or **22.12+** to build. The test toolchain (Vitest 5) needs **22.12+**.
 
 ```sh
 npm install
@@ -164,7 +164,9 @@ npm run preview     # serve dist/
 
 ```sh
 npx playwright install chromium
-npm test            # engine and registry invariants, then the browser release suite
+npm test            # test:unit, then test:e2e
+npm run test:unit   # Vitest: engine invariants and registry, with model coverage in coverage.local/
+npm run test:e2e    # Playwright: the browser release suite and the README checks
 ```
 
 Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome. Set `SHOWCASE_URL` to a deployed URL, including the repository subpath and trailing slash, to run the browser suite against it.
@@ -185,7 +187,7 @@ The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The s
 **Deploy**
 
 1. In **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, typechecks, builds and deploys `dist/`.
+2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, runs the unit tests with the coverage floor, builds, installs Chromium and runs the browser release suite. Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
 3. The workflow passes the Pages URL to the build as `VITE_SITE_URL`, which makes the social image URL absolute and adds `og:url`. For a manual build, set `VITE_SITE_URL=https://<account>.github.io/broke-glass/`.
 
 Assets use a relative base and routes are hashes, so project subpaths and links such as `/#quantum` work without configuration. Fonts ship with the bundle.

@@ -3,17 +3,50 @@ name: GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  # Every gate in the README runs here. Nothing is built for Pages, let alone deployed, until all pass.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Unit tests and model coverage
+        run: npm run test:unit
+      - run: npm run build
+      - name: Install Chromium for the release suite
+        run: npx playwright install --with-deps chromium
+      - name: Browser release suite
+        run: npm run test:e2e
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.local
+          if-no-files-found: ignore
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results
+          path: test-results
+          if-no-files-found: ignore
   build:
+    if: github.event_name != 'pull_request'
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
