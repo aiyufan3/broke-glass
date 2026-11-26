@@ -25,6 +25,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: Import boundaries between paradigms, core and chrome
+        run: npm run check:boundaries
       - name: Unit tests and model coverage
         run: npm run test:unit
       - run: npm run build

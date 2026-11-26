@@ -28,7 +28,8 @@ type Body = { home: Vec; x: number; y: number; vx: number; vy: number; charge: n
 type Bead = { x: number; y: number; tailX: number; tailY: number; ring: number; fraction: number; seated: boolean }
 type Ripple = { age: number; gain: number }
 type Interference = { age: number; a: Vec; b: Vec }
-type Segments = { data: Float32Array; count: number }
+/** Contour segments as x1 y1 x2 y2 quadruples. `dropped` counts segments the last pass could not store. */
+type Segments = { data: Float32Array; count: number; dropped: number }
 
 export type FieldState = {
   bodies: Body[]
@@ -97,8 +98,8 @@ export function createField(): FieldState {
       return { x: Math.cos(angle), y: Math.sin(angle), tailX: 0, tailY: 0, ring: 0, fraction: random(), seated: false }
     }),
     potential: new Float32Array(COLS * ROWS),
-    major: { data: new Float32Array(SEGMENT_CAPACITY * 4), count: 0 },
-    minor: { data: new Float32Array(SEGMENT_CAPACITY * 4), count: 0 },
+    major: { data: new Float32Array(SEGMENT_CAPACITY * 4), count: 0, dropped: 0 },
+    minor: { data: new Float32Array(SEGMENT_CAPACITY * 4), count: 0, dropped: 0 },
   }
 }
 
@@ -180,7 +181,11 @@ function samplePotential(state: FieldState, probeMass: number) {
 }
 
 function push(segments: Segments, x1: number, y1: number, x2: number, y2: number) {
-  if (segments.count === SEGMENT_CAPACITY) return
+  // A full buffer keeps what it has and counts the rest, so a truncated field is measurable, not silent.
+  if (segments.count * 4 >= segments.data.length) {
+    segments.dropped++
+    return
+  }
   const offset = segments.count++ * 4
   segments.data[offset] = x1
   segments.data[offset + 1] = y1
@@ -193,6 +198,8 @@ function contour(state: FieldState, inner: number) {
   const { potential, spacing, flow, major, minor } = state
   major.count = 0
   minor.count = 0
+  major.dropped = 0
+  minor.dropped = 0
   for (let row = 0; row < ROWS - 1; row++) {
     const top = row * CELL
     for (let column = 0; column < COLS - 1; column++) {
@@ -433,6 +440,11 @@ export function bodyReading(state: FieldState, index: number): Reading {
     gy -= other.mass * (body.y - other.y) / square ** 1.5
   })
   return { potential: 2600 * Math.hypot(gx, gy), radius: distance, bearing: bearing(dx, dy) }
+}
+
+/** Contour segments the latest frame had to drop because a buffer was full. Zero in a healthy field. */
+export function droppedSegments(state: FieldState) {
+  return state.major.dropped + state.minor.dropped
 }
 
 export function totalMass(state: FieldState) {

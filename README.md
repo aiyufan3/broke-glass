@@ -93,7 +93,7 @@ src/themes/index.ts       one line in `surfaces`
 
 **Rules**
 
-1. Import `src/data/*`, `src/state/*` and your own folder. Nothing from another theme. Nothing from `src/components`.
+1. Import `src/data/*`, `src/state/*` and your own folder. Nothing from another theme. Nothing from `src/components`. `npm run check:boundaries` enforces this with dependency-cruiser (`.dependency-cruiser.cjs`); `tests/unit/contract.test.ts` fails any selector or `@keyframes` in your CSS that does not start from a class prefixed with your id or an abbreviation of it (`tel-` for `telemetry`).
 2. Fill the 377 × 836 surface. The status bar is drawn over the top 44 px and the home indicator over the bottom 12 px.
 3. Drive the engine with `useFrameLoop(host, interactive, draw)`. A frame with `still: true` must render the settled state: it is issued for gallery plates, hidden tabs, off-screen hosts and `prefers-reduced-motion`.
 4. Read state with `useOS(selector, interactive)` and, inside a frame loop, `useOSSnapshot(interactive)`. Select the smallest slice. With `interactive` false neither subscribes.
@@ -123,7 +123,7 @@ If the new column reads as one of the existing five, it is not a new paradigm.
 
 1. Add the three controls to `all fifteen engine controls change what their engine draws`, and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
 2. Add at least one invariant of the model to `tests/unit/physics.test.ts`. `tests/unit/registry.test.ts` checks the specification itself. Every `src/themes/*/*.ts` model file must keep 90 % line, statement and function coverage and 75 % branch coverage on its own; an engine without tests fails the gate.
-3. `npm run typecheck && npm run build && npm test`. No errors. No warnings. CI runs the same gates before anything is deployed.
+3. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
 
 </details>
 
@@ -164,7 +164,8 @@ npm run preview     # serve dist/
 
 ```sh
 npx playwright install chromium
-npm test            # test:unit, then test:e2e
+npm test            # check:boundaries, test:unit, then test:e2e
+npm run check:boundaries   # dependency-cruiser: paradigm, core and chrome import rules
 npm run test:unit   # Vitest: engine invariants and registry, with model coverage in coverage.local/
 npm run test:e2e    # Playwright: the browser release suite and the README checks
 ```

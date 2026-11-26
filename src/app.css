@@ -224,6 +224,10 @@ button { cursor: pointer; }
   color: var(--lab-ash); background: var(--lab-ink); font: 500 11px/1.4 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase;
 }
 .specimen-fault strong { color: var(--lab-signal); }
+.specimen-fault code { max-width: 300px; color: var(--lab-chalk); letter-spacing: .02em; text-transform: none; overflow-wrap: anywhere; }
+.specimen-fault button { justify-self: center; min-height: 32px; padding: 0 12px; border: 1px solid var(--lab-rule-strong); color: var(--lab-bone); font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.specimen-fault button:hover { border-color: var(--lab-bone); }
+.specimen-fault button:focus-visible { outline: 1px solid var(--lab-bone); outline-offset: 3px; }
 
 .native-mode { position: fixed; inset: 0; overflow: hidden; }
 .native-capsule {

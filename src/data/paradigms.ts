@@ -1,5 +1,8 @@
 export type ParadigmProps = { interactive: boolean }
 
+/** The native surface every paradigm fills, in CSS pixels. Each engine's own SURFACE must match it. */
+export const SURFACE = { width: 377, height: 836 } as const
+
 type EngineControl = {
   label: string
   min: number
@@ -153,7 +156,7 @@ export function paradigmPrompt(id: ParadigmId, values: EngineParams) {
   const spec = paradigms[id]
   const engine = spec.controls.map((control, index) => `${control.label} ${values[index]}${'unit' in control ? control.unit : ''}`).join(', ')
   return [
-    `You are designing ${spec.name}, an interactive 393 × 852 mobile computing interface.`,
+    `You are designing ${spec.name}, an interactive ${SURFACE.width} × ${SURFACE.height} mobile computing interface.`,
     spec.grammar,
     `Palette in order from base to accent: ${spec.colors.join(', ')}. Typography: ${spec.type.join(' and ')}.`,
     `Required rules: ${spec.rules.join(', ')}. Explicitly banned: ${spec.bans.join(', ')}.`,

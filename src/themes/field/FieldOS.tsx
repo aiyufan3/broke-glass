@@ -7,7 +7,7 @@ import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions, useOSSnapshot } from '../../state/osStore'
 import type { OSState } from '../../state/osStore'
 import FieldTools from './FieldTools'
-import { BODY_HOMES, CORE, SURFACE, bodyReading, createField, emitRipple, probeReading, settleField, stepField, totalMass } from './potential'
+import { BODY_HOMES, CORE, SURFACE, bodyReading, createField, droppedSegments, emitRipple, probeReading, settleField, stepField, totalMass } from './potential'
 import type { Vec } from './potential'
 import { paintField } from './renderer'
 import type { ToolRing } from './renderer'
@@ -54,6 +54,7 @@ export default function FieldOS({ interactive }: ParadigmProps) {
   const probe = useRef<HTMLPreElement>(null)
   const written = useRef<string[]>([])
   const gesture = useRef<Gesture | null>(null)
+  const reportedOverflow = useRef(false)
   const [field] = useState(createField)
   const [toolRing] = useState(createToolRing)
   const active = useOS((state) => state.activeModule, interactive)
@@ -74,6 +75,11 @@ export default function FieldOS({ interactive }: ParadigmProps) {
     const inputs = { warp: warp / 100, levels, drift: drift / 100, stress, selected }
     if (still) settleField(field, inputs, time)
     else stepField(field, inputs, time, delta)
+    // A full contour buffer drops segments; in development that is a warning, which fails the release suite.
+    if (import.meta.env.DEV && !reportedOverflow.current && droppedSegments(field)) {
+      reportedOverflow.current = true
+      console.warn(`FieldOS dropped ${droppedSegments(field)} contour segments: the segment buffer is full.`)
+    }
     const ctx = surface(canvas.current, SURFACE.width, SURFACE.height, ratio)
     if (ctx) paintField(ctx, field, { time, tool: toolRing(snapshot()) })
 
