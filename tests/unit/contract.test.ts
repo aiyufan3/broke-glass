@@ -33,10 +33,13 @@ export function cssViolations(id: string, css: string, file = `${id}.css`) {
   root.walkAtRules(/keyframes$/i, (rule) => {
     if (!scopes(id, rule.params)) violations.push(`${file}: @keyframes ${rule.params}`)
   })
+  // Vite inlines @import, so it would pull another paradigm's or the chrome's CSS past both gates.
+  root.walkAtRules('import', (rule) => { violations.push(`${file}: @import ${rule.params}`) })
   root.walkRules((rule) => {
     if (rule.parent?.type === 'atrule' && /keyframes$/i.test((rule.parent as postcss.AtRule).name)) return
     for (const selector of rule.selectors) {
-      let compound = leftmost(selector)
+      // Classes count only outside arguments and attribute values: a[href=".strata-x"] is not scoped.
+      let compound = leftmost(selector).replace(/\[[^\]]*\]/g, '[]')
       while (/\([^()]*\)/.test(compound)) compound = compound.replace(/\([^()]*\)/g, '')
       const classes = [...compound.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((match) => match[1])
       if (!classes.some((name) => scopes(id, name))) violations.push(`${file}: ${selector}`)
@@ -55,16 +58,22 @@ describe('theme CSS is scoped to its paradigm', () => {
       .field-node { color: red; }
       :is(.tel-a) .x { color: red; }
       @media (width < 600px) { .tel-wave, .wave { height: 0; } }
+      a[href=".tel-x"], body[data-x=".tel-a"] .tel-b { color: red; }
+      .tel-row[data-x="1"] { color: red; }
+      @import '../field/field.css';
       @keyframes spin { to { rotate: 1turn; } }
       @keyframes tel-acquire { to { opacity: 1; } }`
     expect(cssViolations('telemetry', css)).toEqual([
       'telemetry.css: @keyframes spin',
+      "telemetry.css: @import '../field/field.css'",
       'telemetry.css: :root',
       'telemetry.css: body',
       'telemetry.css: h2 .tel-head',
       'telemetry.css: .field-node',
       'telemetry.css: :is(.tel-a) .x',
       'telemetry.css: .wave',
+      'telemetry.css: a[href=".tel-x"]',
+      'telemetry.css: body[data-x=".tel-a"] .tel-b',
     ])
   })
 
@@ -76,6 +85,38 @@ describe('theme CSS is scoped to its paradigm', () => {
       expect(sheets.length, id).toBeGreaterThan(0)
       for (const sheet of sheets) expect(cssViolations(id, readFileSync(new URL(`${id}/${sheet}`, THEMES), 'utf8'), `${id}/${sheet}`)).toEqual([])
     }
+  })
+})
+
+/**
+ * Module loads dependency-cruiser cannot see: import.meta.glob patterns and new URL(…, import.meta.url).
+ * Inside a theme or the core they may only name files in the same folder.
+ */
+export function hiddenLoads(source: string) {
+  const loads = [...source.matchAll(/import\.meta\.glob\s*(?:<[^>]*>)?\s*\(([^)]*)\)|new\s+URL\s*\(\s*(['"`][^'"`]*['"`])/g)]
+  return loads.flatMap((match) => {
+    const specifiers = [...(match[1] ?? match[2]).matchAll(/['"`]!?([^'"`]+)['"`]/g)].map((found) => found[1])
+    return specifiers.filter((specifier) => !specifier.startsWith("./"))
+  })
+}
+
+describe('no module load escapes the import boundaries', () => {
+  test('the scanner flags globs and URLs that leave the folder and allows ones that stay in it', () => {
+    const source = `
+      const near = import.meta.glob('./*.ts')
+      const far = import.meta.glob<{ x: number }>(['../field/*.ts', '!./skip.ts'], { eager: true })
+      const sheet = new URL('../telemetry/telemetry.css', import.meta.url)
+      const own = new URL('./tile.png', import.meta.url)
+      const chrome = new URL("/src/components/IPhoneFrame.tsx", import.meta.url)`
+    expect(hiddenLoads(source)).toEqual(['../field/*.ts', '../telemetry/telemetry.css', '/src/components/IPhoneFrame.tsx'])
+  })
+
+  test('no file in a theme, src/data or src/state loads code outside its own folder', () => {
+    const SOURCE = new URL('../../src/', import.meta.url)
+    const files = readdirSync(SOURCE, { recursive: true, encoding: 'utf8' })
+      .filter((file) => /^(themes|data|state)\//.test(file.replaceAll('\\', '/')) && /\.(ts|tsx)$/.test(file))
+    expect(files.length).toBeGreaterThan(20)
+    for (const file of files) expect(hiddenLoads(readFileSync(new URL(file, SOURCE), 'utf8')), file).toEqual([])
   })
 })
 

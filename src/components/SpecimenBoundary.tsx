@@ -1,31 +1,36 @@
-import { Component, Fragment } from 'react'
+import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 
 type Props = { name: string; children: ReactNode }
-type State = { error: Error | null; attempt: number }
+type State = { error: Error | null; componentStack: string }
 
-/** Contains a failing paradigm so one community plugin cannot take the lab down, and lets it be remounted. */
+/**
+ * Contains a failing paradigm so one community plugin cannot take the lab down. React already reports
+ * the error to the console; the boundary keeps the message and component stack on the fault plate and
+ * lets the paradigm be mounted again without reloading the lab.
+ */
 export default class SpecimenBoundary extends Component<Props, State> {
-  state: State = { error: null, attempt: 0 }
+  state: State = { error: null, componentStack: '' }
 
   static getDerivedStateFromError(error: unknown): Partial<State> {
     return { error: error instanceof Error ? error : new Error(String(error)) }
   }
 
-  componentDidCatch(error: unknown, info: ErrorInfo) {
-    console.error(`${this.props.name} failed to render and was contained.`, error, info.componentStack ?? '')
+  componentDidCatch(_: unknown, info: ErrorInfo) {
+    this.setState({ componentStack: info.componentStack?.trim() ?? '' })
   }
 
-  /** Remounts the paradigm from scratch: a new key discards whatever state it failed with. */
-  retry = () => this.setState(({ attempt }) => ({ error: null, attempt: attempt + 1 }))
+  /** The failed subtree is already unmounted, so clearing the error mounts the paradigm from scratch. */
+  retry = () => this.setState({ error: null, componentStack: '' })
 
   render() {
-    const { error, attempt } = this.state
-    if (!error) return <Fragment key={attempt}>{this.props.children}</Fragment>
+    const { error, componentStack } = this.state
+    if (!error) return this.props.children
     return <section className="specimen-fault" role="alert">
       <strong>{this.props.name}</strong>
       <span>Specimen failed to render.</span>
       <code>{error.message}</code>
+      {componentStack && <details><summary>Component stack</summary><pre>{componentStack}</pre></details>}
       <button type="button" onClick={this.retry}>Remount specimen</button>
     </section>
   }
