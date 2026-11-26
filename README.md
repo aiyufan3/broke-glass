@@ -190,7 +190,7 @@ The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The s
 **Deploy**
 
 1. In **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, runs the unit tests with the coverage floor, builds, installs Chromium and runs the browser release suite. Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
+2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, checks the import boundaries, runs the unit tests with the coverage floor, builds, installs Chromium and runs the browser release suite twice: on the dev server and on the production bundle (`PLAYWRIGHT_PREVIEW=1`). Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
 3. The workflow passes the Pages URL to the build as `VITE_SITE_URL`, which makes the social image URL absolute and adds `og:url`. For a manual build, set `VITE_SITE_URL=https://<account>.github.io/broke-glass/`.
 
 Assets use a relative base and routes are hashes, so project subpaths and links such as `/#quantum` work without configuration. Fonts ship with the bundle.

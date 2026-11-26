@@ -32,8 +32,12 @@ jobs:
       - run: npm run build
       - name: Install Chromium for the release suite
         run: npx playwright install --with-deps chromium
-      - name: Browser release suite
+      - name: Browser release suite on the dev server
         run: npm run test:e2e
+      - name: Browser release suite on the production bundle
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_PREVIEW: '1'
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
