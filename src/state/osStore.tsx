@@ -4,6 +4,7 @@ import { channels, modules, nodes, sessionTime, tracks } from '../data/osData'
 import type { ModuleId } from '../data/osData'
 import { initialParams } from '../data/paradigms'
 import type { EngineParams, EngineSlot, ParadigmId } from '../data/paradigms'
+import { browserStorage, readParams, writeParams } from './persist'
 
 type LogLevel = 'info' | 'ok' | 'warn'
 export type ConsoleLog = { id: number; timestamp: string; input?: string; output: string; level: LogLevel }
@@ -57,8 +58,10 @@ const initial: OSState = {
   paradigmParams: initialParams,
 }
 
-function createStore() {
-  let state = initial
+/** The session store. `storage` holds the Design DNA settings across reloads; pass null to keep them in memory. */
+export function createOSStore(storage: Storage | null = browserStorage()) {
+  // Boot from the saved engine settings; the boot snapshot used by static plates keeps the defaults.
+  let state: OSState = { ...initial, paradigmParams: readParams(storage) }
   let logId = 0
   const listeners = new Set<() => void>()
   let audio: AudioContext | undefined
@@ -237,8 +240,12 @@ function createStore() {
       const values: EngineParams = [...state.paradigmParams[id]]
       values[slot] = value
       commit({ paradigmParams: { ...state.paradigmParams, [id]: values } })
+      writeParams(storage, state.paradigmParams)
     },
-    reset: (id: ParadigmId) => commit({ paradigmParams: { ...state.paradigmParams, [id]: initialParams[id] } }),
+    reset: (id: ParadigmId) => {
+      commit({ paradigmParams: { ...state.paradigmParams, [id]: initialParams[id] } })
+      writeParams(storage, state.paradigmParams)
+    },
   }
 
   return {
@@ -264,9 +271,9 @@ function createStore() {
   }
 }
 
-const Context = createContext<ReturnType<typeof createStore> | null>(null)
+const Context = createContext<ReturnType<typeof createOSStore> | null>(null)
 export function OSProvider({ children }: { children: ReactNode }) {
-  const [store] = useState(createStore)
+  const [store] = useState(() => createOSStore())
   useEffect(() => store.start(), [store])
   return <Context.Provider value={store}>{children}</Context.Provider>
 }

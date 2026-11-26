@@ -21,6 +21,8 @@ const slider = (page, name) => page.getByRole('slider', { name, exact: true })
 async function open(page, hash = '') {
   await page.mouse.move(4, 4)
   await page.goto(`${ORIGIN}${hash}`)
+  // Engine settings persist across reloads; every capture starts from the registry defaults.
+  await page.evaluate(() => localStorage.clear())
   await page.reload()
   await page.evaluate(() => document.fonts.ready)
   await page.waitForTimeout(700)

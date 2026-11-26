@@ -11,7 +11,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // frameLoop.ts and wallClock.ts are browser hooks; the release suite drives them.
-      include: [MODEL, 'src/data/**/*.ts'],
+      include: [MODEL, 'src/data/**/*.ts', 'src/state/persist.ts'],
       exclude: ['src/themes/*/renderer.ts'],
       reporter: ['text', 'html', 'json-summary'],
       // *.local is already ignored by git, so the HTML report never lands in a commit.
@@ -20,6 +20,8 @@ export default defineConfig({
         // Applied to each model file on its own, so a new engine without invariant tests fails
         // the gate even when the other engines are well covered.
         [MODEL]: { perFile: true, lines: 90, statements: 90, functions: 90, branches: 75 },
+        // Settings persistence decides what a reload restores; every fallback branch is part of the contract.
+        'src/state/persist.ts': { lines: 95, statements: 95, functions: 100, branches: 90 },
       },
     },
   },

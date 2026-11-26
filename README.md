@@ -64,7 +64,7 @@ The lab inside is called Next-Era Y3K. Open it and pick a plate.
 | Control | What it does |
 | --- | --- |
 | **Cross-paradigm sync** | Console, Telemetry, Neural Search and Media exist in all six, each in its own geometry. Run `spike` in one console, switch paradigm, and the same timestamped event is in the log while that engine takes the load. Also: `help` `status` `scan` `clear`. |
-| **Design DNA** | Three live sliders per paradigm. Each one changes what the engine draws. The release suite fails if one stops. |
+| **Design DNA** | Three live sliders per paradigm. Each one changes what the engine draws. The release suite fails if one stops. Settings survive a reload. |
 | **Copy Paradigm Prompt** | Copies the paradigm's grammar, palette and current slider values as a prompt. |
 | **Native fullscreen** | Edge to edge, uniformly scaled, desktop and phone. On a phone the gallery puts it one tap away. |
 | **Silhouette test** | A switch in the gallery. Applies the blur to all six plates at once. |
@@ -142,7 +142,7 @@ If the new column reads as one of the existing six, it is not a new paradigm.
 | SpatialOS | A camera that reproduces the CSS transform order, so the canvas corridor and the DOM slabs share one projection. A dive aligns the camera with an aperture, then pushes through it into a lit room. | `spatial/camera.ts` | Select an aperture. The camera goes through it. |
 | StrataOS | Bed boundaries laid down by deposition, thinned by compaction and bent by a fold. Every deformation is a map of depth onto depth with slope below one, so no horizon can cross another. Excavating a formation lifts the overburden and presses the beds below toward bedrock with one shared time constant. | `strata/sediment.ts` | Run `spike`. The block beyond the fault drops and the column keeps trembling. |
 
-All six draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Session state lives in memory until reload.
+All six draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Design DNA settings are saved to `localStorage` under a versioned key (`src/state/persist.ts`) and restored on reload; a value that fails validation falls back to its default. Logs, tools, telemetry and media live in memory until reload, and gallery plates always show the defaults.
 
 </details>
 

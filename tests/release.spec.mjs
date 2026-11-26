@@ -239,6 +239,31 @@ test('drilling a formation opens a gallery in its bed and backfill returns to th
   await expect(launcher).toBeFocused()
 })
 
+test('engine settings survive a reload and corrupt storage falls back to the defaults', async ({ page }) => {
+  const key = 'broke-glass/paradigm-params'
+  const slider = (name) => page.getByRole('slider', { name, exact: true })
+  await page.goto('./#field')
+  await drag(page, 'Gravity Warp', 'min')
+  await drag(page, 'Orbit Drift', 'max')
+  await page.reload()
+  await expect(slider('Gravity Warp')).toHaveValue('0')
+  await expect(slider('Field Line Density')).toHaveValue('30')
+  await expect(slider('Orbit Drift')).toHaveValue('100')
+  const stored = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), key)
+  expect(Object.keys(stored).sort()).toEqual(['params', 'version'])
+  expect(stored.params.field).toEqual([0, 30, 100])
+  await switchTo(page, 5)
+  await expect(slider('Deposition Rate')).toHaveValue('16')
+
+  for (const corrupt of ['{"version":1,"params":{"field":[0,', JSON.stringify({ version: 99, params: { field: [0, 30, 100] } }), JSON.stringify({ version: 1, params: { field: [500, 30, 100] } })]) {
+    await page.evaluate(([key, value]) => localStorage.setItem(key, value), [key, corrupt])
+    await page.goto('./#field')
+    await page.reload()
+    await expect(slider('Gravity Warp')).toHaveValue('58')
+    await expect(slider('Orbit Drift')).toHaveValue('28')
+  }
+})
+
 test('the silhouette test filters every plate in the gallery', async ({ page }) => {
   await page.goto('./')
   await page.getByRole('button', { name: /Silhouette test/ }).click()
