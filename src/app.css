@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+:root {
+  --lab-ink: #0b0b0c;
+  --lab-rule: #2a2a2d;
+  --lab-rule-strong: #4a4a4e;
+  --lab-bone: #e9e7e1;
+  --lab-chalk: #cfcdc6;
+  --lab-ash: #a19f97;
+  --lab-signal: #ff5a2b;
+  --lab-display: "Space Grotesk Variable", "Inter Variable", system-ui, sans-serif;
+  --lab-text: "Inter Variable", Inter, system-ui, sans-serif;
+  --lab-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  font-family: var(--lab-text);
+  color: var(--lab-bone);
+  background: var(--lab-ink);
+  color-scheme: dark;
+  font-synthesis: none;
+}
+
+body { margin: 0; min-width: 280px; }
+button { cursor: pointer; }
+
+.lab { background: var(--lab-ink); }
+.page-width { width: min(100% - 96px, 1480px); }
+:where(.lab-bar, .gallery, .focus-bar, .dna, .native-capsule) :where(button, select, input):focus-visible {
+  outline: 1px solid var(--lab-bone);
+  outline-offset: 3px;
+}
+.lab-kicker {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--lab-ash); font: 500 11px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase;
+}
+.lab-kicker::before { content: ""; width: 18px; height: 1px; background: currentColor; }
+
+.lab-bar { border-bottom: 1px solid var(--lab-rule); }
+.lab-bar__inner { height: 56px; }
+.lab-mark { display: flex; align-items: center; gap: 11px; color: var(--lab-bone); }
+.lab-mark strong { font: 700 21px/1 var(--lab-display); letter-spacing: -.07em; }
+.lab-mark span { color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .18em; text-transform: uppercase; }
+.lab-views button {
+  height: 56px; padding: 0 16px; color: var(--lab-ash);
+  font: 500 11px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase;
+  transition: color .2s;
+}
+.lab-views button:hover { color: var(--lab-bone); }
+.lab-views button[aria-pressed="true"] { color: var(--lab-bone); box-shadow: inset 0 -1px var(--lab-bone); }
+
+.gallery { padding: 36px 0 60px; }
+.gallery-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 40px; padding-bottom: 30px; }
+.gallery-head h1 {
+  margin: 16px 0 20px -.045em; color: var(--lab-bone);
+  font: 600 clamp(54px, 6.7vw, 120px)/.88 var(--lab-display); letter-spacing: -.072em;
+}
+.gallery-head h1 span { color: transparent; -webkit-text-stroke: 1px var(--lab-bone); }
+.gallery-thesis { max-width: 47ch; color: var(--lab-chalk); font-size: clamp(14px, 1.15vw, 17px); line-height: 1.5; }
+.gallery-index { display: grid; grid-template-columns: repeat(2, minmax(118px, auto)); border: 1px solid var(--lab-rule); }
+.gallery-index div { padding: 11px 14px 12px; border-right: 1px solid var(--lab-rule); border-bottom: 1px solid var(--lab-rule); }
+.gallery-index div:nth-child(2n) { border-right: 0; }
+.gallery-index div:nth-last-child(-n + 2) { border-bottom: 0; }
+.gallery-index dt { color: var(--lab-ash); font: 500 9px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase; }
+.gallery-index dd { margin-top: 9px; font: 500 24px/1 var(--lab-display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+
+.plates { border-top: 1px solid var(--lab-rule); }
+.plates-bar { height: 46px; gap: 16px; }
+.plates-bar h2, .silhouette-toggle { color: var(--lab-ash); font: 500 11px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase; }
+.silhouette-toggle { display: flex; align-items: center; gap: 9px; min-height: 30px; transition: color .2s; }
+.silhouette-toggle i { width: 9px; height: 9px; border: 1px solid currentColor; }
+.silhouette-toggle span { color: var(--lab-rule-strong); }
+.silhouette-toggle:is(:hover, [aria-pressed="true"]) { color: var(--lab-bone); }
+.silhouette-toggle[aria-pressed="true"] i { background: var(--lab-bone); }
+.plates-grid { display: grid; grid-template-columns: repeat(var(--plate-count), minmax(0, 1fr)); border-left: 1px solid var(--lab-rule); }
+.plate { position: relative; min-width: 0; padding: 0 clamp(10px, 1.45vw, 24px) 18px; border-right: 1px solid var(--lab-rule); }
+.plate::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; transition: transform .38s cubic-bezier(.2, .7, .2, 1);
+}
+.plate:is(:hover, :focus-within)::before { transform: none; }
+.plate-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 38px;
+  color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+}
+.plate-head span:first-child { color: var(--accent); }
+.plate-head span:last-child { overflow: hidden; line-height: 38px; text-overflow: ellipsis; }
+.plate-device { max-width: 286px; margin-inline: auto; transition: transform .38s cubic-bezier(.2, .7, .2, 1); }
+.plate:is(:hover, :focus-within) .plate-device { transform: translateY(-6px); }
+.plate-device *, .plate-device *::before, .plate-device *::after { animation-play-state: paused !important; }
+.plates-grid[data-silhouette="true"] .iphone-screen > section { filter: grayscale(1) blur(12px); }
+.plates-grid[data-silhouette="true"] :is(.status-bar, .home-indicator) { visibility: hidden; }
+.plate-caption h3 { margin: 18px 0 11px; font: 600 clamp(17px, 1.55vw, 25px)/1 var(--lab-display); letter-spacing: -.045em; }
+.plate-caption dl div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-top: 1px solid var(--lab-rule); }
+.plate-caption dt { padding-top: 2px; color: var(--lab-ash); font: 500 9px/1.2 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; }
+.plate-caption dd { color: var(--lab-chalk); font-size: 11.5px; line-height: 1.35; }
+.plate-target { position: absolute; inset: 0; width: 100%; }
+.plate-target:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+.native-banner { display: none; }
+
+.focus { padding-bottom: 52px; }
+.focus-bar { min-height: 52px; gap: 14px; border-bottom: 1px solid var(--lab-rule); }
+.focus-back, .focus-plate, .native-open { font: 500 11px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase; }
+.focus-back, .native-open { display: flex; align-items: center; gap: 8px; min-height: 32px; color: var(--lab-chalk); transition: color .2s, border-color .2s; }
+.focus-back:hover, .native-open:hover { color: var(--lab-bone); }
+.focus-plate { color: var(--lab-ash); white-space: nowrap; }
+.focus-plate span { margin-left: 14px; color: var(--accent); }
+.native-open { padding: 0 12px; border: 1px solid var(--lab-rule-strong); }
+.native-open:hover { border-color: var(--lab-bone); }
+.focus-stage {
+  --focus-width: clamp(310px, calc((100svh - 150px) * .46127), 393px);
+  display: grid; grid-template-columns: minmax(0, 520px) var(--focus-width); justify-content: center; align-items: start;
+  gap: clamp(48px, 9vw, 164px); padding-top: 30px;
+}
+.focus-device { position: sticky; top: 28px; width: var(--focus-width); max-width: 100%; }
+.focus-device::before, .focus-device::after {
+  position: absolute; display: flex; align-items: center; justify-content: center;
+  color: var(--lab-ash); font: 500 9px/1 var(--lab-mono); letter-spacing: .14em; pointer-events: none;
+}
+.focus-device::before {
+  content: attr(data-height); inset: 0 auto 0 -30px; width: 8px; padding-left: 20px; writing-mode: vertical-rl;
+  border: solid var(--lab-rule-strong); border-width: 1px 0 1px 1px;
+}
+.focus-device::after {
+  content: attr(data-width); inset: auto 0 -30px; height: 8px; padding-bottom: 20px;
+  border: solid var(--lab-rule-strong); border-width: 0 1px 1px;
+}
+.phone-viewport { position: relative; width: 100%; }
+.phone-viewport__native { position: absolute; inset: 0 auto auto 0; width: 393px; height: 852px; transform: scale(var(--phone-scale)); transform-origin: top left; }
+
+.dna { min-width: 0; }
+.dna-head { padding-bottom: 18px; }
+.dna-head .lab-kicker { color: var(--accent); }
+.dna-head h1 { margin: 14px 0 14px -.04em; font: 600 clamp(40px, 4.4vw, 66px)/.94 var(--lab-display); letter-spacing: -.062em; outline: none; }
+.dna-summary { max-width: 54ch; color: var(--lab-chalk); font-size: 14px; line-height: 1.55; }
+.dna-lineage { margin-top: 12px; color: var(--lab-ash); font: 500 10px/1.4 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; }
+.dna-block { padding: 14px 0 17px; border-top: 1px solid var(--lab-rule); }
+.dna-block h2 {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+  color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase;
+}
+.dna kbd { padding: 3px 5px; border: 1px solid var(--lab-rule-strong); color: var(--lab-chalk); font: 500 10px/1 var(--lab-mono); letter-spacing: 0; }
+.dna-switch { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--lab-rule); }
+.dna-switch button {
+  min-width: 0; padding: 9px 9px 10px; border-right: 1px solid var(--lab-rule); color: var(--lab-ash);
+  font: 500 12px/1 var(--lab-display); letter-spacing: -.02em; text-align: left; white-space: nowrap; transition: color .2s, box-shadow .2s;
+}
+.dna-switch button:last-child { border-right: 0; }
+.dna-switch button span { display: block; margin-bottom: 7px; color: var(--switch-accent); font: 500 9px/1 var(--lab-mono); }
+.dna-switch button:hover { color: var(--lab-bone); }
+.dna-switch button[aria-pressed="true"] { color: var(--lab-bone); box-shadow: inset 0 2px var(--switch-accent); }
+.dna-rules { counter-reset: rule; }
+.dna-rules li, .dna-bans li { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: baseline; padding: 4px 0; font-size: 13px; }
+.dna-rules li::before { counter-increment: rule; content: counter(rule, decimal-leading-zero); color: var(--lab-ash); font: 500 9px/1 var(--lab-mono); }
+.dna-bans { margin-top: 5px; }
+.dna-bans li { color: var(--lab-ash); }
+.dna-bans span { text-decoration: line-through var(--lab-signal); }
+.dna-bans b { color: var(--lab-signal); font: 500 9px/1 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; }
+.dna-reset { display: flex; align-items: center; gap: 5px; color: var(--lab-chalk); font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.dna-reset:hover { color: var(--lab-bone); }
+.dna-faders { display: grid; gap: 17px; }
+.dna-fader { display: grid; }
+.dna-fader__head { display: flex; align-items: baseline; justify-content: space-between; }
+.dna-fader__head b { font-size: 13px; font-weight: 500; }
+.dna-fader__head output { color: var(--accent); font: 500 12px/1 var(--lab-mono); font-variant-numeric: tabular-nums; }
+.dna-fader input { width: 100%; height: 24px; appearance: none; background: transparent; cursor: ew-resize; }
+.dna-fader input::-webkit-slider-runnable-track { height: 1px; background: linear-gradient(90deg, var(--accent) var(--fill), var(--lab-rule-strong) var(--fill)); }
+.dna-fader input::-moz-range-track { height: 1px; background: linear-gradient(90deg, var(--accent) var(--fill), var(--lab-rule-strong) var(--fill)); }
+.dna-fader input::-webkit-slider-thumb { appearance: none; width: 7px; height: 17px; margin-top: -8px; border: 0; border-radius: 0; background: var(--accent); }
+.dna-fader input::-moz-range-thumb { width: 7px; height: 17px; border: 0; border-radius: 0; background: var(--accent); }
+.dna-fader__scale {
+  display: flex; justify-content: space-between; height: 15px; padding-top: 7px;
+  color: var(--lab-ash); font: 500 9px/1 var(--lab-mono); font-style: normal;
+  background: repeating-linear-gradient(90deg, var(--lab-rule-strong) 0 1px, transparent 1px calc((100% - 1px) / 10)) top / 100% 4px no-repeat;
+}
+.dna-fader__scale i { font-style: normal; }
+.dna-fader small { margin-top: 5px; max-width: 58ch; color: var(--lab-ash); font-size: 11.5px; line-height: 1.4; }
+.dna-swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--lab-rule); }
+.dna-swatches button { min-width: 0; border-right: 1px solid var(--lab-rule); color: var(--lab-chalk); }
+.dna-swatches button:last-child { border-right: 0; }
+.dna-swatches i { display: block; height: 30px; border-bottom: 1px solid var(--lab-rule); }
+.dna-swatches span { display: block; padding: 7px 0; font: 500 9px/1 var(--lab-mono); text-align: center; }
+.dna-swatches button:hover, .dna-types button:hover { color: var(--lab-bone); }
+.dna-types { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.dna-types button { padding: 6px 8px; border: 1px solid var(--lab-rule); color: var(--lab-chalk); font: 500 10px/1 var(--lab-mono); }
+.dna-copy {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 38px;
+  border: 1px solid var(--accent); color: var(--accent);
+  font: 500 11px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase; transition: color .2s, background .2s;
+}
+.dna-copy:hover { color: var(--lab-ink); background: var(--accent); }
+.dna-keys { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 13px; border-top: 1px solid var(--lab-rule); }
+.dna-keys div { display: flex; align-items: center; gap: 8px; }
+.dna-keys dd { color: var(--lab-ash); font-size: 11px; }
+
+.iphone {
+  position: relative; width: 393px; height: 852px;
+  padding: 7px; border: 1px solid #626371; border-radius: 55px;
+  background: linear-gradient(145deg, #747480 0, #23242b 16%, #4e4e5a 37%, #26272e 70%, #5f606d 100%);
+  box-shadow: inset 0 0 0 2px #252630, inset 0 0 0 4px #4b4b5480;
+}
+.iphone-screen {
+  position: relative; isolation: isolate; overflow: hidden;
+  width: 100%; height: 100%; border-radius: 47px; background: #07080a;
+  color: #f4f7fc; box-shadow: 0 0 0 1px #030407;
+}
+.hardware-button { position: absolute; display: block; width: 4px; border: 1px solid #636471; background: #333440; border-radius: 2px; }
+.hardware-button--action { left: -4px; top: 111px; height: 28px; }
+.hardware-button--volume { left: -4px; top: 159px; height: 61px; }
+.hardware-button--power { right: -4px; top: 172px; height: 81px; }
+.status-bar {
+  position: absolute; z-index: 8; inset: 12px 28px auto; height: 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: #f7f9fc; font-size: 15px; line-height: 1; font-weight: 700; pointer-events: none;
+}
+.dynamic-island {
+  position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  width: 114px; height: 31px; border-radius: 22px; background: #000; border: 1px solid #17171d;
+}
+.dynamic-island span { position: absolute; right: 10px; top: 10px; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 37% 38%, #424579, #10122a 35%, #08080d 72%); }
+.status-icons { display: flex; align-items: center; gap: 4px; }
+.home-indicator { position: absolute; z-index: 8; pointer-events: none; bottom: 8px; left: 50%; transform: translateX(-50%); width: 130px; height: 4px; background: #f7f5f5; opacity: .8; border-radius: 5px; }
+.iphone-screen[data-status="ink"] .status-bar { color: #0d0d0d; }
+.iphone-screen[data-status="ink"] .home-indicator { background: #0d0d0d; }
+.specimen-fault {
+  position: absolute; inset: 0; display: grid; place-content: center; gap: 8px; text-align: center;
+  color: var(--lab-ash); background: var(--lab-ink); font: 500 11px/1.4 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase;
+}
+.specimen-fault strong { color: var(--lab-signal); }
+
+.native-mode { position: fixed; inset: 0; overflow: hidden; }
+.native-capsule {
+  position: absolute; z-index: 2; inset: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  height: calc(env(safe-area-inset-top, 0px) + 44px); padding: env(safe-area-inset-top, 0px) 14px 0;
+  color: var(--lab-bone); background: var(--lab-ink); border-bottom: 1px solid var(--lab-rule);
+  font: 500 11px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase;
+}
+.native-capsule label { display: flex; align-items: center; gap: 12px; color: var(--lab-ash); }
+.native-capsule :is(select, button) { min-height: 32px; color: var(--lab-bone); font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.native-capsule select { padding-right: 6px; background: var(--lab-ink); }
+.native-capsule button { display: flex; align-items: center; gap: 7px; }
+.native-viewport {
+  position: absolute; overflow: hidden;
+  inset: calc(env(safe-area-inset-top, 0px) + 44px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+.native-surface { position: absolute; left: 50%; top: 50%; width: 377px; height: 836px; overflow: hidden; transform: translate(-50%, -50%) scale(var(--native-scale)); }
+
+@media (max-width: 1100px) {
+  .page-width { width: calc(100% - 56px); }
+  .plates-scroll { margin-inline: -28px; padding-inline: 28px; overflow-x: auto; scrollbar-color: var(--lab-rule-strong) var(--lab-ink); scroll-snap-type: x proximity; }
+  .plates-grid { grid-template-columns: repeat(var(--plate-count), minmax(214px, 1fr)); }
+  .plate { scroll-snap-align: start; scroll-margin-inline-start: 28px; }
+  .focus-stage { gap: clamp(28px, 5vw, 60px); }
+  .focus-device::before, .focus-device::after { display: none; }
+}
+@media (max-width: 720px) {
+  .page-width { width: calc(100% - 36px); }
+  .lab-mark span { display: none; }
+  .lab-views button { padding: 0 10px; }
+  .gallery { padding-top: 26px; }
+  .gallery-head { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-bottom: 28px; }
+  .gallery-head h1 { font-size: clamp(50px, 17vw, 96px); }
+  .silhouette-toggle span { display: none; }
+  .plates-scroll { margin-inline: -18px; padding-inline: 18px; }
+  .plates-grid { grid-template-columns: repeat(var(--plate-count), clamp(214px, 62vw, 262px)); width: max-content; }
+  .plate { scroll-margin-inline-start: 18px; }
+  .focus-bar { flex-wrap: wrap; padding-block: 8px; }
+  .focus-plate span { display: none; }
+  .focus-stage { --focus-width: min(100%, 370px); grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 28px; padding-top: 20px; }
+  .focus-device { position: relative; top: 0; }
+  .dna { order: 1; max-width: 520px; }
+  .dna-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dna-switch button:nth-child(-n + 3) { border-bottom: 1px solid var(--lab-rule); }
+  .dna-switch button:nth-child(3) { border-right: 0; }
+}
+@media (max-width: 639.98px) {
+  .native-banner {
+    display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; margin-bottom: 24px; padding: 0 12px;
+    border: 1px solid var(--lab-rule-strong); color: var(--lab-bone);
+    font: 500 11px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+}
