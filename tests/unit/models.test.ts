@@ -9,6 +9,11 @@ import {
   LINES, LINES_PER_CHANNEL, SAMPLES, acquiredPass, beamHeight, channelLine, createSweep, findPeak, lineDepth, microns, oscillator,
   profile, profileRange, project, relief, restSweep, retrigger, shot, traceStats,
 } from '../../src/themes/telemetry/signal'
+import {
+  FAULT_X, GALLERY, LITHOLOGIES, MAX_BEDS, METRES_PER_PX, MIN_BEDS, MODULE_BEDS, SECTION, SPAN_KA, boundaryAt, createStrata, deposit, gallery,
+  moduleBed, reading, restBoundaries, settleStrata, stepStrata, veneerThickness,
+} from '../../src/themes/strata/sediment'
+import type { Strata, StrataInputs } from '../../src/themes/strata/sediment'
 import { CORE, NUCLEUS, PULSE_HOLD_MS, bezierPoint, bezierTangent, createTissue, firePulse, settleTissue, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
 
 const FRAME = 1 / 60
@@ -423,5 +428,151 @@ describe('SpatialOS · camera', () => {
     expect(clipped.length).toBe(4)
     expect(clipped.every((point) => point.z <= limit + 1e-9)).toBe(true)
     expect(clipped.filter((point) => Math.abs(point.z - limit) < 1e-9)).toHaveLength(2)
+  })
+})
+
+describe('StrataOS · sediment', () => {
+  const rest: StrataInputs = { beds: 16, compaction: .45, fold: .32, stress: false, selected: -1 }
+  const settled = (inputs: Partial<StrataInputs> = {}) => {
+    const strata = createStrata()
+    settleStrata(strata, { ...rest, ...inputs })
+    return strata
+  }
+  const run = (strata: Strata, inputs: StrataInputs, seconds: number) => {
+    for (let step = 0; step < steps(seconds); step++) stepStrata(strata, inputs, FRAME)
+  }
+
+  test('with no fold every horizon is level, and the fold lifts horizons over the anticline', () => {
+    const flat = settled({ fold: 0 })
+    for (let index = 0; index <= flat.beds; index++) {
+      for (const x of [0, 90, 150, 262, 377]) expect(boundaryAt(flat, index, x)).toBe(flat.base[index])
+    }
+    const folded = settled({ fold: 1 })
+    for (let index = 0; index <= folded.beds; index++) expect(boundaryAt(folded, index, 150)).toBeLessThan(boundaryAt(folded, index, 20))
+  })
+
+  test('Deposition Rate sets the bed count and Compaction thins deep beds without losing the section', () => {
+    for (const beds of [MIN_BEDS, 16, MAX_BEDS]) {
+      for (const compaction of [0, .45, 1]) {
+        const boundaries = restBoundaries(beds, compaction)
+        expect(boundaries).toHaveLength(beds + 1)
+        expect(boundaries[0]).toBe(SECTION.top)
+        expect(boundaries[beds]).toBe(SECTION.bottom)
+        const thickness = boundaries.slice(1).map((depth, bed) => depth - boundaries[bed])
+        thickness.slice(1).forEach((value, bed) => {
+          if (compaction === 0) expect(value).toBeCloseTo(thickness[bed], 9)
+          else expect(value).toBeLessThan(thickness[bed])
+        })
+      }
+    }
+    const deepest = (compaction: number) => SECTION.bottom - restBoundaries(16, compaction)[15]
+    expect(deepest(1)).toBeLessThan(deepest(.45))
+    expect(deepest(.45)).toBeLessThan(deepest(0))
+  })
+
+  test('the four formations sit in distinct beds, in module order, at every deposition rate', () => {
+    for (let beds = MIN_BEDS; beds <= MAX_BEDS; beds++) {
+      const formations = Array.from({ length: MODULE_BEDS }, (_, module) => moduleBed(beds, module))
+      formations.slice(1).forEach((bed, module) => expect(bed).toBeGreaterThan(formations[module]))
+      expect(formations[0]).toBeGreaterThanOrEqual(0)
+      expect(formations[3]).toBeLessThan(beds)
+    }
+  })
+
+  test('excavating a formation opens a full gallery at its depth and keeps the surface and bedrock in place', () => {
+    for (const beds of [MIN_BEDS, 16, MAX_BEDS]) {
+      const tops = [0, 1, 2, 3].map((selected) => {
+        const strata = settled({ beds, selected })
+        const opened = gallery(strata)!
+        expect(opened.bed).toBe(moduleBed(beds, selected))
+        expect(opened.bottom - opened.top).toBeGreaterThanOrEqual(GALLERY - 1e-9)
+        expect(strata.base[0]).toBe(SECTION.top)
+        expect(strata.base[beds]).toBe(SECTION.bottom)
+        expect(strata.drill).toBe(opened.bottom)
+        return opened.top
+      })
+      // Deeper formations open deeper; the two deepest can share the floor of the section.
+      tops.slice(1).forEach((top, module) => expect(top).toBeGreaterThanOrEqual(tops[module]))
+      expect(tops[3]).toBeGreaterThan(tops[0])
+    }
+    expect(gallery(settled())).toBeNull()
+  })
+
+  test('backfill returns every bed to rest and withdraws the core to the surface', () => {
+    const strata = settled({ selected: 2 })
+    run(strata, rest, 2.5)
+    restBoundaries(16, .45).forEach((depth, index) => expect(strata.base[index]).toBeCloseTo(depth, 2))
+    expect(strata.open).toBeLessThan(1e-3)
+    expect(strata.drill).toBeCloseTo(SECTION.top, 2)
+  })
+
+  test('a new bed count lays down a new section without losing the excavation in progress', () => {
+    const strata = settled({ selected: 1 })
+    stepStrata(strata, { ...rest, beds: 24, selected: 1 }, FRAME)
+    expect(strata.base).toHaveLength(25)
+    const opened = gallery(strata)!
+    expect(opened.bed).toBe(moduleBed(24, 1))
+    expect(opened.bottom - opened.top).toBeGreaterThan(GALLERY * .95)
+  })
+
+  test('fresh sediment lands, consolidates and is gone; shear waves expire; stress keeps the column trembling', () => {
+    const strata = settled()
+    deposit(strata, 1)
+    run(strata, rest, .3)
+    expect(veneerThickness(strata)).toBeGreaterThan(5)
+    expect(strata.waves).toHaveLength(1)
+    run(strata, rest, 1.3)
+    expect(strata.waves).toHaveLength(0)
+    run(strata, rest, 2)
+    expect(strata.veneer).toBeNull()
+    expect(veneerThickness(strata)).toBe(0)
+    run(strata, { ...rest, stress: true }, 2.8)
+    expect(strata.waves.length).toBeGreaterThan(0)
+    settleStrata(strata, { ...rest, stress: true })
+    expect(strata.waves).toEqual([])
+  })
+
+  test('under load the block beyond the fault is thrown down by a fixed distance', () => {
+    const strata = settled({ fold: 0, stress: true })
+    for (let index = 0; index <= strata.beds; index++) {
+      expect(boundaryAt(strata, index, FAULT_X + 1) - boundaryAt(strata, index, FAULT_X - 1)).toBeCloseTo(16, 9)
+    }
+    expect(boundaryAt(settled({ fold: 0 }), 4, FAULT_X + 1)).toBe(boundaryAt(settled({ fold: 0 }), 4, FAULT_X - 1))
+  })
+
+  test('readings deepen and age monotonically from the surface to bedrock', () => {
+    const strata = settled()
+    expect(reading(strata, SECTION.top)).toMatchObject({ metres: 0, ka: 0, bed: 0 })
+    const bottom = reading(strata, SECTION.bottom)
+    expect(bottom.metres).toBeCloseTo((SECTION.bottom - SECTION.top) * METRES_PER_PX, 9)
+    expect(bottom.ka).toBeCloseTo(SPAN_KA, 9)
+    expect(bottom.bed).toBe(15)
+    let previous = -1
+    for (let depth = SECTION.top; depth <= SECTION.bottom; depth += 7) {
+      const { ka } = reading(strata, depth)
+      expect(ka).toBeGreaterThanOrEqual(previous)
+      previous = ka
+    }
+  })
+
+  test('the section is reproducible and its grains settle faster with the deposition rate, inside the water column', () => {
+    const [a, b] = [createStrata(), createStrata()]
+    expect(Array.from(a.lithology)).toEqual(Array.from(b.lithology))
+    expect(Array.from(a.grainY)).toEqual(Array.from(b.grainY))
+    expect(a.lithology.every((value) => value < LITHOLOGIES)).toBe(true)
+    const fallen = (beds: number) => {
+      const strata = settled({ beds })
+      const before = Float32Array.from(strata.grainY)
+      stepStrata(strata, { ...rest, beds }, .02)
+      // Grains that reached the surface wrap to the top of the column; measure the ones still falling.
+      return before.reduce((sum, y, index) => sum + Math.max(0, strata.grainY[index] - y), 0)
+    }
+    expect(fallen(MAX_BEDS)).toBeGreaterThan(fallen(MIN_BEDS))
+    const strata = settled()
+    run(strata, rest, 6)
+    for (const y of strata.grainY) {
+      expect(y).toBeGreaterThanOrEqual(40)
+      expect(y).toBeLessThanOrEqual(SECTION.top)
+    }
   })
 })

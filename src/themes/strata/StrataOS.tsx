@@ -1,0 +1,116 @@
+import { useEffect, useRef, useState } from 'react'
+import type { PointerEvent } from 'react'
+import { modules, system } from '../../data/osData'
+import type { ModuleId } from '../../data/osData'
+import type { ParadigmProps } from '../../data/paradigms'
+import { surface, useFrameLoop } from '../../state/frameLoop'
+import { useOS, useOSActions } from '../../state/osStore'
+import StrataTools, { FORMATIONS } from './StrataTools'
+import { paintStrata } from './renderer'
+import { SECTION, SPAN_KA, SURFACE, createStrata, deposit, gallery, moduleBed, reading, settleStrata, stepStrata } from './sediment'
+import './strata.css'
+
+// How much sediment each kind of event lands on the surface, and how hard its shear wave shakes the column.
+const load = { boot: 0, command: .55, inspect: .7, scan: .95, spike: 1.3 } as const
+
+export default function StrataOS({ interactive }: ParadigmProps) {
+  const host = useRef<HTMLElement>(null)
+  const canvas = useRef<HTMLCanvasElement>(null)
+  const launchers = useRef<(HTMLButtonElement | null)[]>([])
+  const readout = useRef<HTMLOutputElement>(null)
+  const probeDepth = useRef<number | null>(null)
+  const trigger = useRef<HTMLButtonElement | null>(null)
+  const written = useRef<Record<string, string>>({})
+  const [strata] = useState(createStrata)
+  const active = useOS((state) => state.activeModule, interactive)
+  const [beds, compaction, fold] = useOS((state) => state.paradigmParams.strata, interactive)
+  const stress = useOS((state) => state.telemetryState.stressMode, interactive)
+  const impulse = useOS((state) => state.impulse, interactive)
+  const actions = useOSActions()
+  const selected = active ? modules.findIndex((module) => module.id === active) : -1
+
+  function write(key: string, value: string, apply: (value: string) => void) {
+    if (written.current[key] === value) return
+    written.current[key] = value
+    apply(value)
+  }
+
+  const invalidate = useFrameLoop(host, interactive, ({ delta, still, ratio }) => {
+    const inputs = { beds, compaction: compaction / 100, fold: fold / 100, stress, selected }
+    if (still) settleStrata(strata, inputs)
+    else stepStrata(strata, inputs, delta / 1000)
+    const context = surface(canvas.current, SURFACE.width, SURFACE.height, ratio)
+    if (context) paintStrata(context, strata, { probe: probeDepth.current })
+
+    // Each formation's label rides the middle of its own bed.
+    modules.forEach((_, index) => {
+      const bed = moduleBed(strata.beds, index)
+      const centre = (strata.base[bed] + strata.base[bed + 1]) / 2
+      const element = launchers.current[index]
+      if (element) write(`bed${index}`, `0 ${centre.toFixed(1)}px`, (value) => { element.style.translate = value })
+    })
+    const opened = gallery(strata)
+    const style = host.current?.style
+    if (style) {
+      write('top', `${(opened?.top ?? SECTION.top).toFixed(1)}px`, (value) => style.setProperty('--strata-top', value))
+      write('height', `${Math.max(0, (opened?.bottom ?? SECTION.top) - (opened?.top ?? SECTION.top)).toFixed(1)}px`, (value) => style.setProperty('--strata-height', value))
+      write('open', strata.open.toFixed(3), (value) => style.setProperty('--strata-open', value))
+    }
+    const probe = probeDepth.current ?? strata.drill
+    const at = reading(strata, probe)
+    const source = probeDepth.current === null ? 'Core' : 'Probe'
+    const element = readout.current
+    if (element) write('readout', `${source} ${at.metres.toFixed(1).padStart(5, '0')} m · ${at.ka.toFixed(1)} ka · bed ${String(at.bed + 1).padStart(2, '0')}/${strata.beds}`, (value) => { element.textContent = value })
+  })
+
+  useEffect(invalidate, [invalidate, beds, compaction, fold, stress, selected])
+
+  const seenImpulse = useRef(impulse.seq)
+  useEffect(() => {
+    if (impulse.seq === seenImpulse.current) return
+    seenImpulse.current = impulse.seq
+    if (load[impulse.kind]) deposit(strata, load[impulse.kind])
+  }, [strata, impulse])
+
+  // Backfilling returns focus to the formation that was drilled.
+  useEffect(() => {
+    if (!active) trigger.current?.focus({ preventScroll: true })
+  }, [active])
+
+  function drill(module: ModuleId, from: HTMLButtonElement) {
+    if (!interactive) return
+    trigger.current = from
+    actions.setActiveModule(module)
+  }
+
+  function probe(event: PointerEvent<HTMLElement>) {
+    if (!interactive || event.pointerType === 'touch') return
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const depth = (event.clientY - bounds.top) * SURFACE.height / bounds.height
+    probeDepth.current = depth > SECTION.top && depth < SECTION.bottom ? depth : null
+    invalidate()
+  }
+
+  return <section ref={host} className="strata-os" aria-label="StrataOS geological section" data-active={active ?? undefined} data-stress={stress}
+    onPointerMove={probe} onPointerLeave={() => { probeDepth.current = null; invalidate() }}>
+    <canvas className="strata-section" ref={canvas} aria-hidden="true" />
+    <header className="strata-head">
+      <p><span>Lab / 06 · Stratigraphic section</span><span>{SPAN_KA} ka · {beds} beds</span></p>
+      <h2>Strata<span>OS</span></h2>
+      <output className="strata-readout" ref={readout} />
+      <button type="button" className="strata-core" disabled={!interactive} aria-pressed={active === 'console'}
+        onClick={(event) => drill('console', event.currentTarget)}>
+        <span>{system.label}</span><b>{stress ? 'Faulted' : system.status}</b>
+      </button>
+    </header>
+    <nav className="strata-formations" aria-label="Formations">
+      {modules.map((module, index) => <button key={module.id} type="button" className="strata-bed"
+        ref={(element) => { launchers.current[index] = element }} disabled={!interactive}
+        data-depth={index < 2 ? 'shallow' : 'deep'} aria-label={module.label} aria-pressed={active === module.id}
+        onClick={(event) => drill(module.id, event.currentTarget)}>
+        <small>0{index + 1} · {FORMATIONS[index]}</small><strong>{module.label}</strong>
+      </button>)}
+    </nav>
+    {active && <StrataTools active={active} />}
+  </section>
+}

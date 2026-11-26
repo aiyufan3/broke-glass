@@ -1,0 +1,129 @@
+.strata-os {
+  --strata-sand: #e9dfc9;
+  --strata-ochre: #8a6f52;
+  --strata-umber: #2b1e15;
+  --strata-oxide: #b8401e;
+  --strata-ember: #e8754c;
+  --strata-ink: #1e1610;
+  --strata-graphite: #5b4636;
+  --strata-chalk: #ede3cf;
+  --strata-seam: #ede3cf33;
+  --strata-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --strata-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --strata-top: 214px;
+  --strata-height: 0px;
+  --strata-open: 0;
+  position: absolute; inset: 0; overflow: hidden; isolation: isolate;
+  color: var(--strata-ink); background: var(--strata-sand); font-family: var(--strata-serif); font-variant-numeric: tabular-nums;
+}
+.strata-os *, .strata-os *::before, .strata-os *::after { border-radius: 0; }
+.strata-section { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.strata-os :is(button, input):disabled { opacity: 1; cursor: default; }
+.strata-os :is(button, input):focus-visible { outline: 1px solid var(--strata-oxide); outline-offset: 2px; }
+
+.strata-head { position: absolute; top: 54px; left: 18px; right: 18px; }
+.strata-head > p { display: flex; justify-content: space-between; color: var(--strata-graphite); font: 600 8.5px/1 var(--strata-mono); letter-spacing: .14em; text-transform: uppercase; }
+.strata-head h2 { margin-top: 14px; font-size: 52px; font-weight: 500; line-height: .9; letter-spacing: -.035em; }
+.strata-head h2 span { margin-left: 4px; color: var(--strata-oxide); font-style: italic; font-weight: 400; }
+.strata-readout { display: block; margin-top: 14px; padding-top: 7px; border-top: 1px solid #1e161040; font: 500 10px/1 var(--strata-mono); letter-spacing: .04em; white-space: nowrap; }
+.strata-core {
+  position: absolute; right: 0; top: 34px; display: grid; justify-items: end; gap: 4px; padding: 0 0 0 12px; border-left: 1px solid #1e161059;
+  text-align: right;
+}
+.strata-core span { color: var(--strata-graphite); font: 600 8.5px/1 var(--strata-mono); letter-spacing: .12em; text-transform: uppercase; }
+.strata-core b { font-size: 17px; font-weight: 500; font-style: italic; }
+.strata-os[data-stress="true"] .strata-core b { color: var(--strata-oxide); }
+.strata-core:hover:enabled b, .strata-core[aria-pressed="true"] b { text-decoration: underline 1px var(--strata-oxide); text-underline-offset: 4px; }
+
+.strata-formations { position: absolute; inset: 0; pointer-events: none; }
+.strata-bed {
+  position: absolute; left: 0; top: 0; display: grid; gap: 2px; padding: 3px 12px 3px 22px; transform: translateY(-50%);
+  text-align: left; pointer-events: auto; transition: opacity .3s;
+}
+.strata-bed::before { content: ""; position: absolute; left: 0; top: 50%; width: 14px; height: 1px; background: var(--strata-oxide); }
+.strata-bed small { font: 600 8.5px/1 var(--strata-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.strata-bed strong { font-size: 18px; font-weight: 500; line-height: 1.05; }
+.strata-bed[data-depth="deep"] { color: var(--strata-chalk); }
+.strata-bed:hover:enabled strong { text-decoration: underline 1px var(--strata-oxide); text-underline-offset: 4px; }
+.strata-bed[aria-pressed="true"] { visibility: hidden; }
+.strata-os[data-active] .strata-bed { opacity: .6; }
+/* Beds beside an open gallery are pressed thin, so their labels shed the epoch line. */
+.strata-os[data-active] .strata-bed small { display: none; }
+.strata-os[data-active] .strata-bed strong { font-size: 14px; }
+
+/* The gallery is the excavated bed itself: it parts from its centre as the overburden lifts. */
+.strata-gallery { position: absolute; left: 0; right: 0; top: var(--strata-top); height: var(--strata-height); overflow: hidden; color: var(--strata-chalk); }
+.strata-face {
+  position: absolute; left: 0; right: 0; top: 50%; height: 344px; translate: 0 -50%; display: flex; flex-direction: column; gap: 9px;
+  padding: 20px 50px 20px 18px; opacity: var(--strata-open);
+}
+.strata-gallery-head { flex: none; display: grid; grid-template-columns: 1fr auto; align-items: end; row-gap: 3px; }
+.strata-gallery-head p { grid-column: 1 / -1; color: var(--strata-ember); font: 600 8.5px/1 var(--strata-mono); letter-spacing: .14em; text-transform: uppercase; }
+.strata-gallery-head h3 { font-size: 30px; font-weight: 500; font-style: italic; line-height: 1; letter-spacing: -.02em; }
+.strata-gallery-head button { padding-bottom: 2px; border-bottom: 1px solid var(--strata-chalk); font: 600 9.5px/1.2 var(--strata-mono); letter-spacing: .12em; text-transform: uppercase; }
+.strata-gallery-head button:hover { color: var(--strata-ember); border-color: var(--strata-ember); }
+
+.strata-log, .strata-results { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--strata-ochre) transparent; }
+.strata-log li { display: grid; grid-template-columns: 54px 1fr; gap: 6px; padding: 5px 0; border-top: 1px solid var(--strata-seam); font-size: 12.5px; line-height: 1.3; overflow-wrap: anywhere; }
+.strata-log time { color: #ede3cfa6; font: 500 9px/1.5 var(--strata-mono); }
+.strata-log b { color: var(--strata-ember); font-weight: 500; }
+.strata-log li[data-level="warn"] span { color: var(--strata-ember); }
+.strata-prompt { flex: none; display: flex; align-items: center; gap: 8px; min-height: 34px; border-block: 1px solid #ede3cf80; }
+.strata-prompt > span { color: var(--strata-ember); font: 600 13px var(--strata-mono); }
+.strata-prompt input { flex: 1; min-width: 0; color: var(--strata-chalk); background: transparent; font: 12px var(--strata-mono); }
+.strata-prompt input::placeholder { color: #ede3cf73; }
+.strata-prompt button, .strata-quick button, .strata-channels button, .strata-stress, .strata-transport button, .strata-detail button {
+  font: 600 9.5px/1 var(--strata-mono); letter-spacing: .1em; text-transform: uppercase;
+}
+.strata-prompt button { min-height: 26px; padding-inline: 8px; color: var(--strata-chalk); }
+.strata-quick { flex: none; display: flex; }
+.strata-quick button { flex: 1; min-height: 26px; border-right: 1px solid var(--strata-seam); }
+.strata-quick button:last-child { border-right: 0; }
+.strata-quick button:hover, .strata-prompt button:hover { color: var(--strata-ink); background: var(--strata-chalk); }
+
+.strata-telemetry { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 14px; }
+.strata-gauge { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.strata-gauge > p { display: flex; align-items: baseline; gap: 8px; }
+.strata-gauge > p strong { font-size: 48px; font-weight: 400; line-height: 1; letter-spacing: -.04em; }
+.strata-gauge > p span { font: 600 9px/1 var(--strata-mono); letter-spacing: .1em; text-transform: uppercase; }
+.strata-gauge dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--strata-seam); }
+.strata-gauge dl div { padding-top: 6px; }
+.strata-gauge dt { color: #ede3cfa6; font: 600 8.5px/1 var(--strata-mono); letter-spacing: .1em; text-transform: uppercase; }
+.strata-gauge dd { margin-top: 4px; font-size: 16px; }
+.strata-channels { display: flex; border-block: 1px solid var(--strata-seam); }
+.strata-channels button { flex: 1; min-height: 28px; }
+.strata-channels button[aria-pressed="true"], .strata-channels button:hover { color: var(--strata-ink); background: var(--strata-chalk); }
+.strata-stress { align-self: flex-start; min-height: 28px; padding-inline: 2px; border-bottom: 1px solid var(--strata-chalk); }
+.strata-stress[aria-pressed="true"], .strata-stress:hover { color: var(--strata-ember); border-color: var(--strata-ember); }
+.strata-well { display: flex; flex-direction: column; gap: 5px; border-left: 1px solid var(--strata-seam); padding-left: 0; }
+.strata-well canvas { width: 96px; height: 168px; }
+.strata-well figcaption { padding-left: 6px; color: #ede3cfa6; font: 500 8px/1.35 var(--strata-mono); letter-spacing: .06em; text-transform: uppercase; }
+
+.strata-query { flex: none; padding: 7px 0; color: var(--strata-chalk); background: transparent; border-bottom: 1px solid #ede3cf80; font: 12px var(--strata-mono); }
+.strata-query::placeholder { color: #ede3cf73; }
+.strata-results li { border-bottom: 1px solid var(--strata-seam); }
+.strata-result { display: grid; grid-template-columns: 46px 1fr auto; gap: 8px; align-items: baseline; width: 100%; padding: 6px 0; text-align: left; }
+.strata-result > span { color: #ede3cfa6; font: 500 9px/1.2 var(--strata-mono); }
+.strata-result strong { font-size: 14px; font-weight: 500; }
+.strata-result[aria-expanded="true"] strong, .strata-result:hover strong { color: var(--strata-ember); }
+.strata-detail { padding: 0 0 8px 54px; }
+.strata-detail p { font-size: 12.5px; line-height: 1.35; }
+.strata-detail button { margin-top: 6px; padding-bottom: 2px; border-bottom: 1px solid var(--strata-ember); color: var(--strata-ember); }
+.strata-empty { padding-top: 8px; font: 11px var(--strata-mono); }
+
+.strata-media { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.strata-track { display: grid; gap: 4px; }
+.strata-track span { color: #ede3cfa6; font: 600 9px/1 var(--strata-mono); letter-spacing: .1em; text-transform: uppercase; }
+.strata-track strong { font-size: 22px; font-weight: 500; font-style: italic; letter-spacing: -.01em; }
+.strata-time { display: flex; align-items: baseline; gap: 8px; border-top: 1px solid var(--strata-seam); padding-top: 8px; }
+.strata-time strong { font-size: 40px; font-weight: 400; line-height: 1; }
+.strata-time span { font: 11px var(--strata-mono); }
+.strata-seek { width: 100%; height: 18px; appearance: none; background: transparent; cursor: ew-resize; }
+.strata-seek::-webkit-slider-runnable-track { height: 1px; background: var(--strata-chalk); }
+.strata-seek::-moz-range-track { height: 1px; background: var(--strata-chalk); }
+.strata-seek::-webkit-slider-thumb { appearance: none; width: 4px; height: 16px; margin-top: -8px; border: 0; background: var(--strata-ember); }
+.strata-seek::-moz-range-thumb { width: 4px; height: 16px; border: 0; border-radius: 0; background: var(--strata-ember); }
+.strata-transport { display: flex; border-block: 1px solid var(--strata-seam); }
+.strata-transport button { flex: 1; min-height: 32px; border-right: 1px solid var(--strata-seam); }
+.strata-transport button:last-child { border-right: 0; }
+.strata-transport button:hover, .strata-transport button[aria-pressed="true"] { color: var(--strata-ink); background: var(--strata-chalk); }

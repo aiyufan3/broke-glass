@@ -12,9 +12,9 @@ const test = base.extend({
   },
 })
 
-const names = ['FieldOS', 'WetwareOS', 'QuantumOS', 'TelemetryOS', 'SpatialOS']
-const launchers = ['.field-node', '.wet-cell', '.quantum-coordinate', '.tel-row', '.spatial-plane']
-const surfaces = ['.field-os', '.wet-os', '.quantum-os', '.telemetry-os', '.spatial-os']
+const names = ['FieldOS', 'WetwareOS', 'QuantumOS', 'TelemetryOS', 'SpatialOS', 'StrataOS']
+const launchers = ['.field-node', '.wet-cell', '.quantum-coordinate', '.tel-row', '.spatial-plane', '.strata-bed']
+const surfaces = ['.field-os', '.wet-os', '.quantum-os', '.telemetry-os', '.spatial-os', '.strata-os']
 const switchTo = (page, i) => page.getByRole('navigation', { name: 'Switch theme' }).getByRole('button', { name: names[i], exact: true }).click()
 const prompt = (page) => page.getByRole('textbox', { name: 'Console command' })
 const log = (page) => page.getByRole('log', { name: 'Console logs' })
@@ -58,7 +58,7 @@ function countPixels(page, selector, kind) {
   }, kind)
 }
 
-test('a timestamped stress event and command editing survive all five native consoles', async ({ page }) => {
+test('a timestamped stress event and command editing survive all six native consoles', async ({ page }) => {
   await page.goto('./#field')
   await page.locator('.field-node').first().click()
   await expect(prompt(page)).toBeFocused()
@@ -75,7 +75,7 @@ test('a timestamped stress event and command editing survive all five native con
   await expect(page.locator('.tel-bay h3')).toContainText('Console')
   await expect(log(page).locator('time').first()).toHaveText(stamp)
   await expect.poll(() => page.evaluate(() => document.querySelector('.tel-head time').textContent.startsWith(document.querySelector('.status-bar time').textContent))).toBe(true)
-  for (const i of [4, 0, 1, 2, 3]) {
+  for (const i of [4, 0, 1, 2, 5, 3]) {
     await switchTo(page, i)
     await expect(page.locator(surfaces[i])).toHaveAttribute('data-stress', 'true')
     await expect(log(page)).toContainText('Stress injection active')
@@ -109,11 +109,12 @@ test('search disclosures and inspection actions work in each native geometry', a
     await specimen.click()
     await expect(specimen).toHaveAttribute('aria-expanded', 'true')
     await expect(page.getByText('A living junction that routes packets along branching filaments.', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: /Trace in Console|Send to nucleus|Observe in Console|Log specimen|Inspect in Console/ }).click()
+    await page.getByRole('button', { name: /Trace in Console|Send to nucleus|Observe in Console|Log specimen|Inspect in Console|Log to core/ }).click()
     await expect(log(page)).toContainText('W-116 · Mycelial Relay')
     await expect(prompt(page)).toBeFocused()
     await page.keyboard.press('Escape')
   }
+  await switchTo(page, 4)
   await expect(page.locator('.spatial-window-2')).toContainText('1 / mycelial')
   await page.locator('.spatial-plane').nth(3).click()
   await page.getByRole('button', { name: 'Next track' }).click()
@@ -124,7 +125,7 @@ test('search disclosures and inspection actions work in each native geometry', a
   await expect(page.locator('.quantum-coordinate').last()).toContainText('65 Hz · emitting')
 })
 
-test('all fifteen engine controls change what their engine draws', async ({ page }) => {
+test('all eighteen engine controls change what their engine draws', async ({ page }) => {
   // Reduced motion freezes every engine on its settled frame, so a changed frame can only come from a control.
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('./#field')
@@ -188,6 +189,14 @@ test('all fifteen engine controls change what their engine draws', async ({ page
   await expect.poll(() => style(page, '.spatial-scene', 'transform'), { intervals: [20, 40, 60] }).not.toBe(level)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expectRedraw(page, '.spatial-corridor', () => drag(page, 'Chamber Fog', 'max'))
+
+  await switchTo(page, 5)
+  await expectRedraw(page, '.strata-section', () => drag(page, 'Deposition Rate', 'max'))
+  await expect(page.locator('.strata-head p')).toContainText('30 beds')
+  await expect(page.locator('.strata-readout')).toContainText('/30')
+  await expectRedraw(page, '.strata-section', () => drag(page, 'Compaction', 'min'))
+  await drag(page, 'Tectonic Fold', 'min')
+  await expectRedraw(page, '.strata-section', () => drag(page, 'Tectonic Fold', 'max'))
 })
 
 test('an excited body repels its neighbour and tethered cells follow the tissue engine', async ({ page }) => {
@@ -211,6 +220,23 @@ test('the camera travels through an aperture and the chamber reports arrival', a
   await page.getByRole('button', { name: /Exit chamber/ }).click()
   await expect.poll(() => flight('--dive')).toBe(0)
   await expect(page.locator('.spatial-plane').nth(1)).toBeFocused()
+})
+
+test('drilling a formation opens a gallery in its bed and backfill returns to the surface', async ({ page }) => {
+  await page.goto('./#strata')
+  const variable = (name) => page.locator('.strata-os').evaluate((el, name) => parseFloat(el.style.getPropertyValue(name)), name)
+  const launcher = page.locator('.strata-bed').nth(1)
+  await launcher.click()
+  await expect.poll(() => variable('--strata-open')).toBeGreaterThan(.99)
+  await expect.poll(() => variable('--strata-height')).toBeGreaterThan(340)
+  await expect(page.locator('.strata-gallery h3')).toHaveText('Telemetry')
+  await expect(page.locator('.strata-readout')).toContainText('Probe')
+  await park(page)
+  await expect(page.locator('.strata-readout')).toContainText(/^Core \d{3}\.\d m · \d+\.\d ka · bed \d\d\/16$/)
+  await page.getByRole('button', { name: 'Backfill' }).click()
+  await expect.poll(() => variable('--strata-open')).toBeLessThan(.01)
+  await expect(page.locator('.strata-gallery')).toHaveCount(0)
+  await expect(launcher).toBeFocused()
 })
 
 test('the silhouette test filters every plate in the gallery', async ({ page }) => {
@@ -252,7 +278,7 @@ test('the static Pages document exposes a fetchable 1200 × 630 preview before J
   const response = await request.get('./')
   expect(response.ok()).toBe(true)
   const html = await response.text()
-  expect(html).toContain('<title>broke-glass — Five Post-Glass Mobile OS Paradigms</title>')
+  expect(html).toContain('<title>broke-glass — Six Post-Glass Mobile OS Paradigms</title>')
   for (const key of ['og:type', 'og:title', 'og:description', 'og:image', 'og:image:width', 'og:image:height',
     'twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) {
     expect(html).toContain(`="${key}"`)

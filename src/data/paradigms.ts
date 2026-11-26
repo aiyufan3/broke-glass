@@ -136,6 +136,27 @@ export const paradigms = {
     type: ['Barlow Condensed', 'System monospace'],
     grammar: 'Construct a concrete corridor in true one-point perspective with formwork seams and tie holes. Cut four apertures at staggered depths; each is a recess with its own vanishing point, lit from behind and carrying a live preview. Selecting one moves the camera through the opening into a chamber where the back wall is the display and a plinth holds the controls. Light shifts from aqua to amber under load.',
   },
+  strata: {
+    name: 'StrataOS',
+    domain: 'Deep Time & Sediment',
+    accent: '#B8401E',
+    statusBar: 'ink',
+    summary: 'Time is laid down as sediment. Each tool is a formation in the section: drill to it and the overburden lifts to open a gallery. Every command lands a fresh layer and sends a shear wave down the column.',
+    lineage: 'Robert Smithson · Hiroshi Sugimoto · stratigraphic core logs',
+    geometry: 'Full-width sediment beds, one drilled core, fold and fault traces',
+    polarity: 'Sand above, umber below, one oxide-red core',
+    navigation: 'Drill to a formation, excavate it, backfill to the surface',
+    rules: ['Full-width horizontal beds', 'Depth is time', 'One vertical core'],
+    bans: ['Floating panels', 'Radial menus'],
+    controls: [
+      { label: 'Deposition Rate', min: 6, max: 30, initial: 16, effect: 'Beds laid down over the 120 ka the section records. Each bed is one stratum between the surface and bedrock.' },
+      { label: 'Compaction', min: 0, max: 100, initial: 45, effect: 'Overburden thins each bed by the weight above it. At 0 every bed keeps its deposited thickness.' },
+      { label: 'Tectonic Fold', min: 0, max: 100, initial: 32, effect: 'Amplitude of the anticline and syncline bending every horizon, growing with age. At 0 the beds lie level.' },
+    ],
+    colors: ['#E9DFC9', '#8A6F52', '#2B1E15', '#B8401E'],
+    type: ['Iowan Old Style / Georgia', 'System monospace'],
+    grammar: 'Draw the interface as a geological section. Full-width sediment beds fill the screen below a pale water column, their thickness set by deposition and compaction, sand at the surface darkening to umber at bedrock, each patterned with its lithology symbol. One oxide-red core descends on the right with a depth scale in metres. Tools are formations: selecting one drills the core to its depth, lifts the overburden and presses the beds below toward bedrock, opening a gallery whose walls are the cut horizons. Commands land fresh sediment and send a shear wave down the column; under load the section faults.',
+  },
 } as const satisfies Record<string, ParadigmSpec>
 
 export type ParadigmId = keyof typeof paradigms

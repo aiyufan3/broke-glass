@@ -65,6 +65,10 @@ const focus = {
     await hoverAt(page, '.focus-device .spatial-os', .82, .7)
     await page.waitForTimeout(1600)
   },
+  strata: async (page) => {
+    await hoverAt(page, '.focus-device .strata-os', .55, .6)
+    await page.waitForTimeout(900)
+  },
 }
 
 const active = {
@@ -95,6 +99,12 @@ const active = {
   spatial: async (page) => {
     await page.locator('.spatial-plane').nth(1).click()
     await page.waitForTimeout(1900)
+    await page.getByRole('button', { name: /Stress mode/ }).click()
+    await page.waitForTimeout(1200)
+  },
+  strata: async (page) => {
+    await page.locator('.strata-bed').nth(1).click()
+    await page.waitForTimeout(900)
     await page.getByRole('button', { name: /Stress mode/ }).click()
     await page.waitForTimeout(1200)
   },

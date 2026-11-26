@@ -7,7 +7,7 @@ import { useOS, useOSActions } from '../state/osStore'
 import { themes } from '../themes'
 
 const shortcuts = [
-  ['1–5', 'Switch paradigm'],
+  [`1–${themes.length}`, 'Switch paradigm'],
   ['⌘K', 'Console prompt'],
   ['↑ ↓', 'Command history'],
   ['Esc', 'Step back'],
@@ -63,7 +63,7 @@ export default function DesignDnaPanel({ id, onSwitch, titleRef }: {
     </header>
     <section className="dna-block" aria-label="Paradigm switcher">
       <h2>Paradigm <kbd>1–{themes.length}</kbd></h2>
-      <nav className="dna-switch" aria-label="Switch theme">
+      <nav className="dna-switch" aria-label="Switch theme" style={{ '--switch-count': themes.length } as CSSProperties}>
         {themes.map(({ id: candidate, name, accent }, index) => <button type="button" key={candidate}
           aria-keyshortcuts={String(index + 1)} aria-pressed={id === candidate} onClick={() => onSwitch(candidate)}
           style={{ '--switch-accent': accent } as CSSProperties}>

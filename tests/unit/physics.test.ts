@@ -6,6 +6,8 @@ import { APERTURE, EYE, SLAB, SLABS, SURFACE, createFlight, settleFlight, toScre
 import { acquiredPass, advanceSweep, createSweep, sweepSeconds } from '../../src/themes/telemetry/signal'
 import { createTissue, membranePoint, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
 import type { Cell, Vec } from '../../src/themes/wetware/tissue'
+import { MAX_BEDS, MIN_BEDS, boundaryAt, createStrata, deposit, settleStrata, stepStrata } from '../../src/themes/strata/sediment'
+import type { Strata } from '../../src/themes/strata/sediment'
 
 const FRAME_MS = 1000 / 60
 const rest: FieldInputs = { warp: .58, levels: 30, drift: 0, stress: false, selected: -1 }
@@ -133,4 +135,35 @@ test('the resting camera matches CSS perspective and every dive centres its aper
     expect(eye.y).toBeCloseTo(EYE.y, 4)
     expect(rim.x - eye.x).toBeCloseTo(SURFACE.width * 1.42 / 2, 2)
   })
+})
+
+test('no horizon ever crosses another: beds stay in order through folding, faulting, waves and excavation', () => {
+  const xs = Array.from({ length: 96 }, (_, index) => index * SURFACE.width / 95)
+  let thinnest = Infinity
+  const check = (strata: Strata) => {
+    for (const x of xs) {
+      for (let index = 0; index < strata.beds; index++) {
+        thinnest = Math.min(thinnest, boundaryAt(strata, index + 1, x) - boundaryAt(strata, index, x))
+      }
+    }
+  }
+  for (const beds of [MIN_BEDS, 16, MAX_BEDS]) {
+    for (const compaction of [0, .45, 1]) {
+      for (const fold of [0, 1]) {
+        const strata = createStrata()
+        settleStrata(strata, { beds, compaction, fold, stress: true, selected: -1 })
+        check(strata)
+        // Excavate each formation in turn, with fresh sediment and two shear waves crossing the column.
+        for (const selected of [0, 3, 1, -1, 2]) {
+          deposit(strata, 1.25)
+          for (let step = 0; step < 30; step++) {
+            stepStrata(strata, { beds, compaction, fold, stress: true, selected }, FRAME_MS / 1000)
+            if (step === 6) deposit(strata, 1)
+            check(strata)
+          }
+        }
+      }
+    }
+  }
+  expect(thinnest).toBeGreaterThan(1)
 })

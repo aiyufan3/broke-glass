@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="518" viewBox="0 0 1280 518" role="img" aria-labelledby="title description">
 <title id="title">broke-glass</title>
-<desc id="description">Broke as in shattered. Broke as in creatively bankrupt. 05 post-glass mobile OS paradigms on one live core.</desc>
+<desc id="description">Broke as in shattered. Broke as in creatively bankrupt. 06 post-glass mobile OS paradigms on one live core.</desc>
 <rect x="0" y="0" width="1280" height="518" fill="#0D0D0D" shape-rendering="crispEdges"/>
 <rect x="960" y="0" width="320" height="518" fill="#E10600" shape-rendering="crispEdges"/>
 <line x1="0" y1="32" x2="960" y2="32" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
@@ -23,12 +23,13 @@
 <text x="816" y="108" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">03  QUANTUM</text>
 <text x="816" y="129" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">04  TELEMETRY</text>
 <text x="816" y="150" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">05  SPATIAL</text>
-<rect x="816" y="161" width="10" height="10" fill="#0047FF" shape-rendering="crispEdges"/>
-<text x="840" y="171" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">06  OPEN</text>
+<text x="816" y="171" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">06  STRATA</text>
+<rect x="816" y="182" width="10" height="10" fill="#0047FF" shape-rendering="crispEdges"/>
+<text x="840" y="192" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">07  OPEN</text>
 <text x="816" y="408" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">1 LIVE CORE</text>
 <text x="816" y="428" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">4 SHARED TOOLS</text>
 <text x="816" y="448" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="500" letter-spacing="1.1">0 SHARED CARDS</text>
-<text x="964" y="228" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="300" font-weight="700" letter-spacing="-9" textLength="324.6" lengthAdjust="spacingAndGlyphs">05</text>
+<text x="964" y="228" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="300" font-weight="700" letter-spacing="-9" textLength="324.6" lengthAdjust="spacingAndGlyphs">06</text>
 <text x="976" y="268" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.3">paradigms</text>
 <text x="976" y="394" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.2">Broke as in shattered.</text>
 <text x="976" y="421" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.2">Broke as in creatively</text>
