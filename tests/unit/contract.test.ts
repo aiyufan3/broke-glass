@@ -164,7 +164,8 @@ describe('FieldOS contours never drop segments silently', () => {
       }
     }
     expect(worst).toBe(0)
-  })
+    // 54 control combinations of full-resolution marching squares: about 1 s locally, over 10 s on a CI runner under coverage.
+  }, 60_000)
 
   test('a full buffer keeps its segments and reports every one it could not store', () => {
     const field = createField()
