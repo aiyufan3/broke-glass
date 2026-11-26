@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+<title id="title">broke-glass</title>
+<desc id="description">Broke as in shattered. Broke as in creatively bankrupt. 05 post-glass mobile OS paradigms on one live core.</desc>
+<rect x="0" y="0" width="1200" height="630" fill="#F2F0E8" shape-rendering="crispEdges"/>
+<rect x="880" y="0" width="320" height="630" fill="#E10600" shape-rendering="crispEdges"/>
+<line x1="0" y1="48" x2="880" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="160" y1="42" x2="160" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="320" y1="42" x2="320" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="480" y1="42" x2="480" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="640" y1="42" x2="640" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="800" y1="42" x2="800" y2="48" stroke="#0D0D0D" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="40" y="31" fill="#0D0D0D" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16" font-weight="500" letter-spacing="1.4">05 POST-GLASS MOBILE OS PARADIGMS · 1 LIVE CORE · 0 SHARED CARDS</text>
+<text x="27" y="292" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="262" font-weight="700" letter-spacing="-11.8" textLength="741.7" lengthAdjust="spacingAndGlyphs">broke-</text>
+<text x="199" y="533" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="262" font-weight="700" letter-spacing="-11.8" textLength="622.8" lengthAdjust="spacingAndGlyphs">glass</text>
+<text x="40" y="475" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.2">I dropped</text>
+<text x="40" y="504" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.2">my glass.</text>
+<text x="40" y="533" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.2">Let's move on.</text>
+<text x="892" y="292" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="300" font-weight="700" letter-spacing="-9" textLength="324.6" lengthAdjust="spacingAndGlyphs">05</text>
+<text x="896" y="336" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="32" font-weight="700" letter-spacing="-0.3">paradigms</text>
+<text x="896" y="465" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="-0.3">Broke as in shattered.</text>
+<text x="896" y="499" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="-0.3">Broke as in creatively</text>
+<text x="896" y="533" fill="#0D0D0D" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="-0.3">bankrupt.</text>
+</svg>
