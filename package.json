@@ -28,6 +28,7 @@
     "test": "playwright test",
     "silhouettes": "node scripts/silhouettes.mjs",
     "posters": "node scripts/posters.mjs",
+    "screens": "node scripts/screens.mjs",
     "og": "node scripts/posters.mjs && node scripts/og-preview.mjs"
   },
   "engines": {
