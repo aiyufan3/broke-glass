@@ -1,0 +1,158 @@
+.spatial-os {
+  --spatial-ink: #071418;
+  --spatial-slate: #173641;
+  --spatial-haze: #8cbec8;
+  --spatial-light: #e0f1f2;
+  --spatial-edge: #a9dbe3;
+  --spatial-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --spatial-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --spatial-eye: 188.5px 385px;
+  --dive: 0; --arrive: 0; --yaw: 0; --pitch: 0; --look-x: 0; --look-y: 0;
+  --retreat: clamp(0, calc(1 - var(--dive) * 3.2), 1);
+  position: absolute; inset: 0; overflow: hidden; isolation: isolate;
+  color: var(--spatial-light); background: var(--spatial-ink); font-family: var(--spatial-display);
+}
+.spatial-os[data-stress="true"] { --spatial-light: #ffe9d8; --spatial-haze: #ffa370; }
+.spatial-os button:disabled { opacity: 1; cursor: default; }
+.spatial-os :is(button, input):focus-visible { outline: 1px solid currentColor; outline-offset: 3px; }
+.spatial-corridor { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.spatial-view { position: absolute; inset: 0; perspective: var(--depth); perspective-origin: var(--spatial-eye); pointer-events: none; }
+.spatial-scene { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: var(--spatial-eye); }
+.spatial-plane {
+  --slab: var(--retreat);
+  position: absolute; left: var(--x); top: var(--y); width: 208px; height: 122px; pointer-events: auto; touch-action: manipulation;
+  transform-style: preserve-3d; transform: translate3d(-50%, -50%, var(--z)) rotateY(var(--yaw)) scale(var(--k));
+  transition: transform .28s cubic-bezier(.2, .7, .2, 1); text-align: left;
+}
+.spatial-plane:is(:hover:enabled, :focus-visible) { transform: translate3d(-50%, -50%, calc(var(--z) + 34px)) rotateY(var(--yaw)) scale(var(--k)); }
+/* The entered slab stays solid until the aperture light has taken over the frame, then yields to it. */
+.spatial-plane[data-entered="true"] { --slab: clamp(0, calc((1 - var(--dive)) * 3.4), 1); }
+.spatial-plane::before, .spatial-plane::after { content: ""; position: absolute; opacity: var(--slab); }
+.spatial-plane::before { top: 0; bottom: 0; width: 18px; background: #0b1f25; }
+.spatial-plane[data-side="left"]::before { left: 0; transform-origin: left; transform: rotateY(90deg); }
+.spatial-plane[data-side="right"]::before { right: 0; transform-origin: right; transform: rotateY(-90deg); }
+.spatial-plane::after { left: 0; right: 0; height: 18px; }
+.spatial-plane[data-level="above"]::after { bottom: 0; transform-origin: bottom; transform: rotateX(90deg); background: #06151a; }
+.spatial-plane[data-level="below"]::after { top: 0; transform-origin: top; transform: rotateX(-90deg); background: #2e5a66; }
+.spatial-face {
+  position: absolute; inset: 0; opacity: var(--slab);
+  background: linear-gradient(158deg, #35626e, #1b3d47 42%, #112830);
+  box-shadow: inset 0 1px color-mix(in srgb, var(--spatial-edge) 40%, transparent), inset 1px 0 color-mix(in srgb, var(--spatial-edge) 18%, transparent);
+}
+.spatial-face::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 6px 100px, #06151a 0 1.8px, transparent 2.4px),
+    radial-gradient(circle at 202px 100px, #06151a 0 1.8px, transparent 2.4px),
+    radial-gradient(circle at 202px 10px, #06151a 0 1.8px, transparent 2.4px);
+}
+/* Haze thickens with distance: each slab is veiled by the fog density times its normalized depth. */
+.spatial-face::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--spatial-haze); opacity: calc(var(--fog) * var(--far) * .62); transition: background-color 1.2s; }
+.spatial-face small { position: absolute; left: 14px; top: 8px; display: flex; gap: 9px; color: #b9dfe5; font: 600 7.5px/1 var(--spatial-mono); letter-spacing: .1em; }
+.spatial-face small b { color: var(--spatial-light); font-weight: 600; }
+.spatial-face strong { position: absolute; left: 13px; bottom: 8px; font-size: 23px; font-weight: 600; line-height: 1; letter-spacing: .01em; text-transform: uppercase; white-space: nowrap; }
+
+/* A recess with its own vanishing point: the pointer moves it against the corridor's, so depth reads as a portal. */
+.spatial-window {
+  position: absolute; left: 14px; top: 22px; width: 180px; height: 62px; overflow: hidden; background: #04090b;
+  perspective: 150px; perspective-origin: calc(50% - var(--look-x) * 44%) calc(46% + var(--look-y) * 40%);
+}
+.spatial-recess i { --lit: color-mix(in srgb, var(--spatial-light) 76%, var(--spatial-haze)); position: absolute; transition: background-color 1.2s; }
+.spatial-recess i:nth-child(1) { inset: 0 0 auto; height: 34px; transform-origin: top; transform: rotateX(-90deg); background: linear-gradient(#0b2027, var(--lit)); }
+.spatial-recess i:nth-child(2) { inset: auto 0 0; height: 34px; transform-origin: bottom; transform: rotateX(90deg); background: linear-gradient(0deg, #0b2027, var(--lit)); }
+.spatial-recess i:nth-child(3) { inset: 0 auto 0 0; width: 34px; transform-origin: left; transform: rotateY(90deg); background: linear-gradient(90deg, #0b2027, var(--lit)); }
+.spatial-recess i:nth-child(4) { inset: 0 0 0 auto; width: 34px; transform-origin: right; transform: rotateY(-90deg); background: linear-gradient(270deg, #0b2027, var(--lit)); }
+.spatial-lightbox {
+  position: absolute; inset: 0; display: grid; place-items: center; transform: translateZ(-34px);
+  color: var(--spatial-ink); background: radial-gradient(ellipse at 50% 40%, #fff, var(--spatial-light) 62%); transition: background-color 1.2s;
+}
+.spatial-lightbox svg { width: 78%; height: 40px; }
+.spatial-lightbox polyline { stroke-width: 1.3; }
+.spatial-microlog { display: grid; gap: 4px; width: 86%; font: 600 7px/1 var(--spatial-mono); white-space: nowrap; }
+.spatial-microlog i { overflow: hidden; font-style: normal; text-overflow: ellipsis; }
+.spatial-inset-label { position: absolute; right: 7px; bottom: 5px; max-width: 86%; overflow: hidden; font: 600 7.5px/1 var(--spatial-mono); font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+
+.spatial-header { position: absolute; z-index: 2; left: 24px; right: 24px; top: 67px; pointer-events: none; opacity: var(--retreat); }
+.spatial-header p { color: #a7d5dd; font: 600 9px/1.2 var(--spatial-mono); letter-spacing: .16em; text-transform: uppercase; }
+.spatial-header h2 { margin-left: -1px; font-size: 59px; font-weight: 600; line-height: .93; letter-spacing: -.02em; text-transform: uppercase; }
+.spatial-header h2 span { color: var(--spatial-haze); font-size: .63em; transition: color 1.2s; }
+.spatial-header button { position: absolute; top: 12px; right: 0; padding: 5px 0 5px 10px; pointer-events: auto; font-size: 18px; text-align: right; }
+.spatial-header button span { display: block; color: #a1d2da; font: 9px/1 var(--spatial-mono); text-transform: uppercase; }
+
+.spatial-shelf {
+  position: absolute; z-index: 1; left: 30px; right: 30px; bottom: 58px; height: 62px; display: flex; opacity: var(--retreat);
+  transform: perspective(480px) rotateX(50deg); transform-origin: 50% 100%;
+  color: #c8e7eb; background: linear-gradient(#3b6a76, #1a3a44); box-shadow: 0 10px #0d2229, inset 0 1px color-mix(in srgb, var(--spatial-edge) 42%, transparent);
+}
+.spatial-shelf button { flex: 1; display: grid; align-content: center; justify-items: center; gap: 6px; border-right: 1px solid #75a1a655; font: 650 10px/1 var(--spatial-mono); }
+.spatial-shelf button:last-child { border-right: 0; font-size: 22px; }
+.spatial-shelf button > i { width: 2px; height: 12px; background: var(--spatial-light); transition: background-color 1.2s; }
+.spatial-shelf button:hover:enabled { background: #71a8b14d; }
+.spatial-os[data-depth] :is(.spatial-header, .spatial-shelf) { pointer-events: none; }
+
+.spatial-chamber { position: absolute; z-index: 4; inset: 0; opacity: var(--arrive); color: var(--spatial-ink); }
+/* The lintel of the aperture the camera came through: it frames the lit room and carries the way out. */
+.spatial-exit {
+  position: absolute; z-index: 1; inset: 0 0 auto; display: flex; align-items: flex-end; justify-content: space-between; height: 100px; padding: 0 24px 15px;
+  color: var(--spatial-light); background: linear-gradient(#081a1f, #173641); box-shadow: inset 0 -1px color-mix(in srgb, var(--spatial-edge) 55%, transparent);
+  font: 600 10px/1 var(--spatial-mono); letter-spacing: .12em; text-transform: uppercase;
+}
+.spatial-exit:focus-visible { outline-offset: -6px; }
+.spatial-room { position: absolute; inset: 0; perspective: var(--depth); perspective-origin: var(--spatial-eye); pointer-events: none; }
+/* The display wall shares the canvas room's camera: same rotation about the eye, pushed to the room's back plane. */
+.spatial-wall {
+  position: absolute; inset: 0; display: flex; flex-direction: column; padding: 46px 36px 112px; pointer-events: auto;
+  transform-origin: var(--spatial-eye); transform: rotateX(calc(var(--pitch) * 1deg)) rotateY(calc(var(--yaw) * 1deg)) translateZ(-520px);
+}
+.spatial-wall > small { font: 600 15px/1 var(--spatial-mono); letter-spacing: .14em; text-transform: uppercase; }
+.spatial-wall h3 { margin: 10px 0 22px -3px; font-size: 78px; font-weight: 600; line-height: .92; letter-spacing: -.015em; text-transform: uppercase; }
+.spatial-log, .spatial-locations { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: #07141866 transparent; border-top: 1px solid #07141840; }
+.spatial-log p { padding: 13px 0; border-bottom: 1px solid #07141826; font: 17px/1.42 var(--spatial-mono); overflow-wrap: anywhere; }
+.spatial-log time { display: block; margin-bottom: 3px; font-size: 13px; opacity: .66; }
+.spatial-log b { font-weight: 700; }
+.spatial-log p[data-level="warn"] { box-shadow: inset 5px 0 #c8501e; padding-left: 14px; }
+.spatial-reading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.spatial-reading strong { font-size: 156px; font-weight: 600; line-height: .86; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.spatial-reading span, .spatial-track, .spatial-empty { font: 600 17px/1.3 var(--spatial-mono); }
+.spatial-trace { width: 100%; height: 128px; margin-top: 26px; overflow: visible; fill: none; stroke: currentColor; }
+.spatial-trace path { stroke-width: 1; opacity: .3; }
+.spatial-trace polyline { stroke-width: 2.6; stroke-linejoin: round; }
+.spatial-figures { display: flex; gap: 38px; margin-top: 22px; }
+.spatial-figures dt { font: 600 13px/1 var(--spatial-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .7; }
+.spatial-figures dd { margin-top: 8px; font-size: 38px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.spatial-locations li { border-bottom: 1px solid #07141826; }
+.spatial-result { display: grid; grid-template-columns: 74px 1fr 52px; align-items: center; gap: 8px; width: 100%; min-height: 70px; text-align: left; font: 600 17px/1.25 var(--spatial-mono); }
+.spatial-result > span, .spatial-result small { font-size: 13px; font-weight: 500; opacity: .72; }
+.spatial-result small { display: block; }
+.spatial-result[aria-expanded="true"] { box-shadow: inset 5px 0 currentColor; padding-left: 12px; }
+.spatial-detail { padding: 0 0 16px 12px; box-shadow: inset 5px 0 currentColor; font: 16px/1.45 var(--spatial-mono); }
+.spatial-detail button { min-height: 58px; font: 700 15px/1 var(--spatial-mono); letter-spacing: .08em; text-decoration: underline; text-transform: uppercase; }
+.spatial-slits { display: flex; align-items: end; justify-content: space-between; height: 190px; margin: 24px 0 30px; }
+.spatial-slits i { width: 7px; height: 100%; background: currentColor; transform-origin: bottom; transform: scaleY(var(--level)); }
+.spatial-slits[data-playing="true"] i { animation: spatial-level .47s var(--phase) ease-in-out infinite alternate; }
+@keyframes spatial-level { to { transform: scaleY(calc(1.1 - var(--level))); } }
+
+.spatial-plinth {
+  position: absolute; inset: auto 0 0; display: grid; gap: 9px; padding: 14px 24px 38px;
+  color: var(--spatial-light); background: linear-gradient(#173641, #081a1f);
+}
+.spatial-plinth::before {
+  content: ""; position: absolute; inset: auto 0 100%; height: 30px; transform-origin: bottom; transform: perspective(300px) rotateX(64deg);
+  background: linear-gradient(#4a7f8c, #2a5661);
+}
+.spatial-entry { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #a1c6ce; }
+.spatial-entry input { flex: 1; min-width: 0; min-height: 36px; color: var(--spatial-light); font: 12px var(--spatial-mono); }
+.spatial-entry input::placeholder { color: #afc7cc; }
+.spatial-entry button { min-height: 36px; padding-inline: 12px; font-size: 16px; font-weight: 600; text-transform: uppercase; }
+.spatial-entry span { color: #b6d3d8; font: 10px/1 var(--spatial-mono); white-space: nowrap; }
+.spatial-keys { display: flex; gap: 4px; }
+.spatial-keys button { flex: 1; min-height: 36px; border: 1px solid #6f9aa3; font: 600 10px/1 var(--spatial-mono); letter-spacing: .06em; text-transform: uppercase; transition: color .2s, background-color .2s; }
+.spatial-keys button:hover { background: #65909b4f; }
+.spatial-keys button[aria-pressed="true"] { color: var(--spatial-ink); background: var(--spatial-light); border-color: var(--spatial-light); }
+.spatial-keys .spatial-stress[aria-pressed="true"] { background: #ffa370; border-color: #ffa370; }
+.spatial-seek { width: 100%; height: 22px; appearance: none; background: transparent; cursor: ew-resize; }
+.spatial-seek::-webkit-slider-runnable-track { height: 2px; background: #6f9aa3; }
+.spatial-seek::-moz-range-track { height: 2px; background: #6f9aa3; }
+.spatial-seek::-webkit-slider-thumb { appearance: none; width: 4px; height: 18px; margin-top: -8px; border: 0; border-radius: 0; background: var(--spatial-light); }
+.spatial-seek::-moz-range-thumb { width: 4px; height: 18px; border: 0; border-radius: 0; background: var(--spatial-light); }
