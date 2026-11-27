@@ -46,11 +46,13 @@ button { cursor: pointer; }
 .lab-views button:hover { color: var(--lab-bone); }
 .lab-views button[aria-pressed="true"] { color: var(--lab-bone); box-shadow: inset 0 -1px var(--lab-bone); }
 
-.gallery { padding: 36px 0 60px; }
+/* The index is one composition the height of the window: the masthead at the top, the band of plates standing on the bottom edge. */
+.gallery { display: flex; flex-direction: column; min-height: calc(100svh - 57px); padding: 36px 0 28px; }
+.gallery .plates { margin-top: auto; }
 .gallery-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 40px; padding-bottom: 30px; }
 .gallery-head h1 {
   margin: 16px 0 20px -.045em; color: var(--lab-bone);
-  font: 600 clamp(54px, 6.7vw, 120px)/.88 var(--lab-display); letter-spacing: -.072em;
+  font: 600 clamp(54px, 10.4vw, 168px)/.84 var(--lab-display); letter-spacing: -.072em;
 }
 .gallery-head h1 span { color: transparent; -webkit-text-stroke: 1px var(--lab-bone); }
 .gallery-thesis { max-width: 47ch; color: var(--lab-chalk); font-size: clamp(14px, 1.15vw, 17px); line-height: 1.5; }
@@ -63,36 +65,29 @@ button { cursor: pointer; }
 
 .plates { border-top: 1px solid var(--lab-rule); }
 .plates-bar { height: 46px; gap: 16px; }
-.plates-bar h2, .silhouette-toggle { color: var(--lab-ash); font: 500 11px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase; }
-.silhouette-toggle { display: flex; align-items: center; gap: 9px; min-height: 30px; transition: color .2s; }
-.silhouette-toggle i { width: 9px; height: 9px; border: 1px solid currentColor; }
-.silhouette-toggle span { color: var(--lab-ash); }
-.silhouette-toggle:is(:hover, [aria-pressed="true"]) { color: var(--lab-bone); }
-.silhouette-toggle[aria-pressed="true"] i { background: var(--lab-bone); }
+.plates-bar h2, .plates-spec { color: var(--lab-ash); font: 500 11px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase; }
+/*
+ * The index. A paradigm is shown as the lab measures it, a halftone of its home screen in grey under
+ * a 12 px blur, with its plate number and nothing else: it has to be told apart by its mass alone.
+ */
 .plates-grid { display: grid; grid-template-columns: repeat(var(--plate-count), minmax(0, 1fr)); border-left: 1px solid var(--lab-rule); }
-.plate { position: relative; min-width: 0; padding: 0 clamp(10px, 1.45vw, 24px) 18px; border-right: 1px solid var(--lab-rule); }
+.plate { position: relative; display: block; min-width: 0; padding: 0 clamp(8px, 1.2vw, 20px) 24px; border-right: 1px solid var(--lab-rule); color: var(--lab-bone); text-align: left; }
 .plate::before {
-  content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--accent);
+  content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: var(--accent, var(--lab-bone));
   transform: scaleX(0); transform-origin: left; transition: transform .38s cubic-bezier(.2, .7, .2, 1);
 }
-.plate:is(:hover, :focus-within)::before { transform: none; }
-.plate-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 38px;
-  color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
-}
-.plate-head span:first-child { color: var(--accent-text); }
-.plate-head span:last-child { overflow: hidden; line-height: 38px; text-overflow: ellipsis; }
-.plate-device { max-width: 286px; margin-inline: auto; transition: transform .38s cubic-bezier(.2, .7, .2, 1); }
-.plate:is(:hover, :focus-within) .plate-device { transform: translateY(-6px); }
-.plate-device *, .plate-device *::before, .plate-device *::after { animation-play-state: paused !important; }
-.plates-grid[data-silhouette="true"] .iphone-screen > section { filter: grayscale(1) blur(12px); }
-.plates-grid[data-silhouette="true"] :is(.status-bar, .home-indicator) { visibility: hidden; }
-.plate-caption h3 { margin: 18px 0 11px; font: 600 clamp(17px, 1.55vw, 25px)/1 var(--lab-display); letter-spacing: -.045em; }
-.plate-caption dl div { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 7px 0; border-top: 1px solid var(--lab-rule); }
-.plate-caption dt { padding-top: 2px; color: var(--lab-ash); font: 500 9px/1.2 var(--lab-mono); letter-spacing: .12em; text-transform: uppercase; }
-.plate-caption dd { color: var(--lab-chalk); font-size: 11.5px; line-height: 1.35; }
-.plate-target { position: absolute; inset: 0; width: 100%; }
-.plate-target:focus-visible { outline: 1px solid var(--accent); outline-offset: -1px; }
+.plate:is(:hover, :focus-visible)::before { transform: none; }
+.plate:focus-visible { outline: 1px solid var(--accent, var(--lab-bone)); outline-offset: -1px; }
+.plate-number { display: flex; align-items: center; height: 38px; color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .12em; transition: color .2s; }
+.plate:is(:hover, :focus-visible) .plate-number { color: var(--accent-text, var(--lab-bone)); }
+.plate-raster { display: block; width: 100%; aspect-ratio: 377 / 836; background: var(--lab-ink); }
+/* Plate 08 has not been measured, because it has not been made. */
+.plate-void { display: grid; place-items: center; border: 1px dashed var(--lab-rule-strong); background: none; }
+.plate-void b { color: var(--lab-ash); font: 500 10px/1 var(--lab-mono); letter-spacing: .16em; text-transform: uppercase; transition: color .2s; }
+.plate--open:is(:hover, :focus-visible) .plate-void b { color: var(--lab-bone); }
+/* A plate in flight between the index and the device, and the layer inside the device that every change of view passes through. */
+.plate-ghost { position: fixed; z-index: 60; transform-origin: 0 0; pointer-events: none; }
+.transit { position: absolute; z-index: 9; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .native-banner { display: none; }
 
 .focus { padding-bottom: 52px; }
@@ -138,13 +133,15 @@ button { cursor: pointer; }
 }
 .dna kbd { padding: 3px 5px; border: 1px solid var(--lab-rule-strong); color: var(--lab-chalk); font: 500 10px/1 var(--lab-mono); letter-spacing: 0; }
 .dna-switch { display: grid; grid-template-columns: repeat(var(--switch-count), minmax(0, 1fr)); border: 1px solid var(--lab-rule); }
+/* The switcher is the index in small: plates by number and mass, the current one at full strength. */
 .dna-switch button {
-  min-width: 0; padding: 9px 9px 10px; border-right: 1px solid var(--lab-rule); color: var(--lab-ash);
-  font: 500 12px/1 var(--lab-display); letter-spacing: -.02em; text-align: left; white-space: nowrap; transition: color .2s, box-shadow .2s;
+  min-width: 0; padding: 9px 9px 10px; border-right: 1px solid var(--lab-rule); color: var(--lab-rule-strong);
+  text-align: left; transition: color .2s, box-shadow .2s;
 }
+.dna-switch button svg { display: block; width: 100%; aspect-ratio: 377 / 836; }
 .dna-switch button:last-child { border-right: 0; }
 .dna-switch button span { display: block; margin-bottom: 7px; color: var(--switch-accent-text); font: 500 9px/1 var(--lab-mono); }
-.dna-switch button:hover { color: var(--lab-bone); }
+.dna-switch button:hover { color: var(--lab-ash); }
 .dna-switch button[aria-pressed="true"] { color: var(--lab-bone); box-shadow: inset 0 2px var(--switch-accent); }
 .dna-rules { counter-reset: rule; }
 .dna-rules li, .dna-bans li { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: baseline; padding: 4px 0; font-size: 13px; }
@@ -231,8 +228,6 @@ button { cursor: pointer; }
 .specimen-fault details { max-width: 300px; text-align: left; }
 .specimen-fault summary { cursor: pointer; text-align: center; }
 .specimen-fault pre { max-height: 160px; margin-top: 6px; overflow: auto; color: var(--lab-chalk); font-size: 9px; letter-spacing: 0; text-transform: none; white-space: pre-wrap; }
-/* Gallery plates are inert: recovery belongs to the focus and fullscreen views. */
-.plate-device .specimen-fault :is(button, details) { display: none; }
 
 .native-mode { position: fixed; inset: 0; overflow: hidden; }
 .native-capsule {
@@ -254,7 +249,7 @@ button { cursor: pointer; }
 @media (max-width: 1100px) {
   .page-width { width: calc(100% - 56px); }
   .plates-scroll { margin-inline: -28px; padding-inline: 28px; overflow-x: auto; scrollbar-color: var(--lab-rule-strong) var(--lab-ink); scroll-snap-type: x proximity; }
-  .plates-grid { grid-template-columns: repeat(var(--plate-count), minmax(214px, 1fr)); }
+  .plates-grid { grid-template-columns: repeat(var(--plate-count), minmax(128px, 1fr)); }
   .plate { scroll-snap-align: start; scroll-margin-inline-start: 28px; }
   .focus-stage { gap: clamp(28px, 5vw, 60px); }
   .focus-device::before, .focus-device::after { display: none; }
@@ -266,18 +261,21 @@ button { cursor: pointer; }
   .gallery { padding-top: 26px; }
   .gallery-head { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-bottom: 28px; }
   .gallery-head h1 { font-size: clamp(50px, 17vw, 96px); }
-  .silhouette-toggle span { display: none; }
+  .plates-spec { display: none; }
   .plates-scroll { margin-inline: -18px; padding-inline: 18px; }
-  .plates-grid { grid-template-columns: repeat(var(--plate-count), clamp(214px, 62vw, 262px)); width: max-content; }
+  /* On a phone the eight plates stand in two rows, all in view at once. */
+  .plates-scroll { overflow: visible; }
+  .plates-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); width: auto; row-gap: 0; border-top: 0; }
+  .plate { padding: 0 6px 14px; border-bottom: 1px solid var(--lab-rule); }
+  .plate-number { height: 30px; font-size: 9px; }
   .plate { scroll-margin-inline-start: 18px; }
   .focus-bar { flex-wrap: wrap; padding-block: 8px; }
   .focus-plate span { display: none; }
   .focus-stage { --focus-width: min(100%, 370px); grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 28px; padding-top: 20px; }
   .focus-device { position: relative; top: 0; }
   .dna { order: 1; max-width: 520px; }
-  .dna-switch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .dna-switch button:nth-child(-n + 3) { border-bottom: 1px solid var(--lab-rule); }
-  .dna-switch button:nth-child(3) { border-right: 0; }
+  .dna-switch { grid-template-columns: repeat(var(--switch-count), minmax(0, 1fr)); }
+  .dna-switch button { padding: 6px 4px 7px; }
 }
 @media (max-width: 639.98px) {
   .native-banner {

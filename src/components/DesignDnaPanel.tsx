@@ -6,6 +6,7 @@ import type { EngineSlot, ParadigmId } from '../data/paradigms'
 import { useOS, useOSActions } from '../state/osStore'
 import { themes } from '../themes'
 import { accentText } from './accentText'
+import { RASTER, platePath } from './plates'
 
 const shortcuts = [
   [`1–${themes.length}`, 'Switch paradigm'],
@@ -68,7 +69,8 @@ export default function DesignDnaPanel({ id, onSwitch, titleRef }: {
         {themes.map(({ id: candidate, name, accent }, index) => <button type="button" key={candidate}
           aria-keyshortcuts={String(index + 1)} aria-pressed={id === candidate} onClick={() => onSwitch(candidate)}
           style={{ '--switch-accent': accent, '--switch-accent-text': accentText(accent) } as CSSProperties}>
-          <span aria-hidden="true">{index + 1}</span>{name}
+          <span>{String(index + 1).padStart(2, '0')}</span><span className="sr-only"> {name}</span>
+          <svg viewBox={`0 0 ${RASTER.columns} ${RASTER.rows}`} preserveAspectRatio="none" aria-hidden="true"><path d={platePath(candidate)} fill="currentColor" /></svg>
         </button>)}
       </nav>
     </section>

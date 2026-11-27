@@ -5,6 +5,7 @@ import { createServer } from 'vite'
 
 const OUTPUT = new URL('./silhouettes.json', import.meta.url)
 const GRID = { columns: 13, rows: 29 }
+const FILTER = 'grayscale(1) blur(12px)'
 // Vite's default host is localhost, which macOS resolves to ::1 first; pin IPv4 so the server
 // listens on the address the browser opens.
 const HOST = '127.0.0.1'
@@ -51,19 +52,22 @@ const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL 
 
 try {
   const { paradigmIds, paradigms } = await server.ssrLoadModule('/src/data/paradigms.ts')
+  // Reduced motion gives every engine its settled frame and every view change without a transition.
   const page = await browser.newPage({ viewport: { width: 1440, height: 1100 }, deviceScaleFactor: 2, reducedMotion: 'reduce' })
   // The TelemetryOS plate prints the wall clock; a fixed time keeps the measurement reproducible.
   await page.clock.setFixedTime(new Date('2026-01-01T09:41:00'))
-  await page.goto(`http://${HOST}:${PORT}/`)
-  await page.evaluate(() => document.fonts.ready)
-  await page.addStyleTag({ content: '.plate .iphone-screen { border-radius: 0 !important; }' })
-  await page.getByRole('button', { name: /Silhouette test/ }).click()
-  await page.waitForTimeout(400)
-
-  const screens = await page.locator('.plate .iphone-screen').all()
   const plates = []
-  for (const [index, id] of paradigmIds.entries()) {
-    const png = (await screens[index].screenshot()).toString('base64')
+  for (const id of paradigmIds) {
+    // Each paradigm is measured where it runs, in the focus device, under the filter the rule names.
+    await page.goto(`http://${HOST}:${PORT}/#${id}`)
+    await page.evaluate(() => document.fonts.ready)
+    await page.addStyleTag({ content: `
+      .iphone-screen { border-radius: 0 !important; }
+      .iphone-screen > section { filter: ${FILTER}; }
+      .iphone-screen :is(.status-bar, .home-indicator, .transit) { visibility: hidden; }` })
+    await page.mouse.move(4, 4)
+    await page.waitForTimeout(400)
+    const png = (await page.locator('.focus-device .iphone-screen').screenshot()).toString('base64')
     const cells = await page.evaluate(sample, { png, grid: GRID })
     plates.push({
       id,
@@ -72,7 +76,7 @@ try {
       luminance: cells.map((value) => value.toString(16).padStart(2, '0')).join(''),
     })
   }
-  await writeFile(OUTPUT, `${JSON.stringify({ filter: 'grayscale(1) blur(12px)', grid: GRID, plates }, null, 2)}\n`)
+  await writeFile(OUTPUT, `${JSON.stringify({ filter: FILTER, grid: GRID, plates }, null, 2)}\n`)
   console.log(`Wrote ${fileURLToPath(OUTPUT)}`)
 } finally {
   await browser.close()
