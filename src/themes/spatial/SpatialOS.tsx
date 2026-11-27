@@ -6,6 +6,7 @@ import type { ModuleId } from '../../data/osData'
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import SpatialChamber from './SpatialChamber'
 import { EYE, SLABS, SURFACE, cameraTransform, createFlight, previewTilt, sendPulse, settleFlight, stepFlight } from './camera'
 import { paintSpace } from './renderer'
@@ -19,9 +20,10 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
   const host = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const scene = useRef<HTMLDivElement>(null)
-  const trigger = useRef<HTMLButtonElement | null>(null)
   const look = useRef({ x: 0, y: 0 })
   const written = useRef<Record<string, string>>({})
+  /** What the canvas currently shows, as the values it was painted from. */
+  const painted = useRef('')
   const [flight] = useState(createFlight)
   const entry = useOS((state) => state.activeModule, interactive)
   const [focal, tilt, fog] = useOS((state) => state.paradigmParams.spatial, interactive)
@@ -34,8 +36,21 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
     const inputs = { entered, focal, lookX: look.current.x, lookY: look.current.y, tilt, stress }
     if (still) settleFlight(flight, inputs)
     else stepFlight(flight, inputs, delta / 1000)
-    const context = surface(canvas.current, SURFACE.width, SURFACE.height, ratio)
-    if (context) paintSpace(context, flight, { focal, fog: fog / 100 })
+    // The corridor is repainted only when something it is drawn from has moved. At rest, and on touch
+    // devices where the camera never follows a pointer, the last frame is already the right picture.
+    const { camera } = flight
+    const picture = [
+      camera.x.toFixed(2), camera.y.toFixed(2), camera.z.toFixed(2), camera.yaw.toFixed(3), camera.pitch.toFixed(3), camera.push.toFixed(2),
+      flight.dive.toFixed(4), flight.arrive.toFixed(4), flight.yaw.toFixed(3), flight.pitch.toFixed(3),
+      flight.pulse === null ? '' : flight.pulse.toFixed(4), flight.warmth.toFixed(4), focal, fog, ratio.toFixed(2),
+    ].join(' ')
+    if (picture !== painted.current) {
+      const context = surface(canvas.current, SURFACE.width, SURFACE.height, ratio)
+      if (context) {
+        paintSpace(context, flight, { focal, fog: fog / 100 })
+        painted.current = picture
+      }
+    }
 
     const transform = cameraTransform(flight.camera)
     if (scene.current && written.current.transform !== transform) {
@@ -59,6 +74,22 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
 
   useEffect(invalidate, [invalidate, entered, focal, tilt, fog, stress])
 
+  // A restored canvas is blank whatever was painted on it before, so the picture is painted again.
+  useEffect(() => {
+    const element = canvas.current
+    if (!element) return
+    const repaint = () => {
+      painted.current = ''
+      invalidate()
+    }
+    element.addEventListener('contextrestored', repaint)
+    document.addEventListener('visibilitychange', repaint)
+    return () => {
+      element.removeEventListener('contextrestored', repaint)
+      document.removeEventListener('visibilitychange', repaint)
+    }
+  }, [invalidate])
+
   const previousTilt = useRef(tilt)
   useEffect(() => {
     const before = previousTilt.current
@@ -73,9 +104,7 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
     sendPulse(flight)
   }, [flight, impulse])
 
-  useEffect(() => {
-    if (!entry) trigger.current?.focus({ preventScroll: true })
-  }, [entry])
+  useToolFocus(host, entry, interactive, { tool: '.spatial-chamber', launchers: '.spatial-plane' })
 
   function follow(event: PointerEvent<HTMLElement>) {
     if (!interactive || event.pointerType === 'touch') return
@@ -86,10 +115,8 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
     }
   }
 
-  function dive(destination: ModuleId, from: HTMLButtonElement) {
-    if (!interactive) return
-    trigger.current = from
-    actions.setActiveModule(destination)
+  function dive(destination: ModuleId) {
+    if (interactive) actions.setActiveModule(destination)
   }
 
   return <section ref={host} className="spatial-os" aria-label="SpatialOS dimensional interfaces" data-depth={entry ?? undefined} data-stress={stress}
@@ -106,7 +133,7 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
           } as CSSProperties
           return <button key={module.id} type="button" className="spatial-plane" style={style} disabled={!interactive}
             aria-label={module.label} data-entered={entry === module.id} data-side={slab.x < EYE.x ? 'left' : 'right'}
-            data-level={slab.y < EYE.y ? 'above' : 'below'} onClick={(event) => dive(module.id, event.currentTarget)}>
+            data-level={slab.y < EYE.y ? 'above' : 'below'} onClick={() => dive(module.id)}>
             <span className="spatial-face">
               <small><b>0{index + 1}</b>Z {slab.z < 0 ? '−' : '+'}{Math.abs(slab.z)}</small>
               <span className={`spatial-window spatial-window-${index}`} aria-hidden="true">
@@ -127,15 +154,15 @@ export default function SpatialOS({ interactive }: ParadigmProps) {
     <header className="spatial-header" inert={entry !== null}>
       <p>Dimensional interface</p>
       <h2>Spatial <span>OS</span></h2>
-      <button type="button" onClick={(event) => dive('console', event.currentTarget)} disabled={!interactive}>{system.label}<span>{system.status}</span></button>
+      <button type="button" onClick={() => dive('console')} disabled={!interactive}>{system.label}<span>{system.status}</span></button>
     </header>
     <nav className="spatial-shelf" aria-label="Architectural shelf" inert={entry !== null}>
       {modules.map((module, index) => <button type="button" key={module.id} disabled={!interactive}
-        aria-label={module.label} onClick={(event) => dive(module.id, event.currentTarget)}>
+        aria-label={module.label} onClick={() => dive(module.id)}>
         <i aria-hidden="true" /><span>0{index + 1}</span>
       </button>)}
       <button type="button" disabled={!interactive} aria-label="Open command bay"
-        onClick={(event) => dive('console', event.currentTarget)}><span aria-hidden="true">⌘</span></button>
+        onClick={() => dive('console')}><span aria-hidden="true">⌘</span></button>
     </nav>
     {entry && <SpatialChamber active={entry} />}
   </section>

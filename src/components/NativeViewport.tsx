@@ -6,7 +6,8 @@ const SURFACE_HEIGHT = 836
 
 export default function NativeViewport({ children, background }: { children: ReactNode; background: string }) {
   const viewport = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
+  // Unmeasured until the first layout, so the specimen mounts once at its real scale.
+  const [scale, setScale] = useState<number | null>(null)
 
   useLayoutEffect(() => {
     const element = viewport.current!
@@ -17,7 +18,7 @@ export default function NativeViewport({ children, background }: { children: Rea
     return () => observer.disconnect()
   }, [])
 
-  return <div className="native-viewport" ref={viewport} style={{ background, '--native-scale': scale } as CSSProperties}>
-    <div className="native-surface">{children}</div>
+  return <div className="native-viewport" ref={viewport} style={{ background, '--native-scale': scale ?? 1 } as CSSProperties}>
+    {scale !== null && <div className="native-surface">{children}</div>}
   </div>
 }
