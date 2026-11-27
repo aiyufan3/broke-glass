@@ -30,6 +30,8 @@ jobs:
       - name: Unit tests and model coverage
         run: npm run test:unit
       - run: npm run build
+      - name: Bundle size budget
+        run: npm run check:bundle
       - name: Install Chromium for the release suite
         run: npx playwright install --with-deps chromium
       - name: Browser release suite on the dev server
@@ -38,6 +40,8 @@ jobs:
         run: npm run test:e2e
         env:
           PLAYWRIGHT_PREVIEW: '1'
+      - name: Performance budgets on the production bundle
+        run: npm run test:perf
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:

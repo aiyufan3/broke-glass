@@ -29,6 +29,8 @@
     "check:boundaries": "depcruise src --config .dependency-cruiser.cjs",
     "test:unit": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:perf": "PLAYWRIGHT_PREVIEW=1 PLAYWRIGHT_PERF=1 playwright test",
+    "check:bundle": "node scripts/check-bundle.mjs",
     "silhouettes": "node scripts/silhouettes.mjs",
     "posters": "node scripts/posters.mjs",
     "screens": "node scripts/screens.mjs",

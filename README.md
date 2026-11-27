@@ -170,8 +170,12 @@ npx playwright install chromium
 npm test            # check:boundaries, test:unit, then test:e2e
 npm run check:boundaries   # dependency-cruiser: paradigm, core and chrome import rules
 npm run test:unit   # Vitest: engine invariants and registry, with model coverage in coverage.local/
-npm run test:e2e    # Playwright: the browser release suite and the README checks
+npm run test:e2e    # Playwright: the browser release suite, settled-frame samples and the README checks
+npm run check:bundle   # after a build: dist/ and its largest script against their byte budgets
+npm run test:perf   # after a build: long tasks in the gallery and frame times in focus, on the production bundle
 ```
+
+Every performance budget is in `tests/perf-budgets.mjs`, with the measurement it was set from.
 
 Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome. Set `SHOWCASE_URL` to a deployed URL, including the repository subpath and trailing slash, to run the browser suite against it.
 
@@ -191,7 +195,7 @@ The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The s
 **Deploy**
 
 1. In **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, checks the import boundaries, runs the unit tests with the coverage floor, builds, installs Chromium and runs the browser release suite twice: on the dev server and on the production bundle (`PLAYWRIGHT_PREVIEW=1`). Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
+2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, checks the import boundaries, runs the unit tests with the coverage floor, builds and checks the bundle size budget, installs Chromium, runs the browser release suite twice, on the dev server and on the production bundle (`PLAYWRIGHT_PREVIEW=1`), and then the performance budgets. Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
 3. The workflow passes the Pages URL to the build as `VITE_SITE_URL`, which makes the social image URL absolute and adds `og:url`. For a manual build, set `VITE_SITE_URL=https://<account>.github.io/broke-glass/`.
 
 Assets use a relative base and routes are hashes, so project subpaths and links such as `/#quantum` work without configuration. Fonts ship with the bundle.

@@ -3,12 +3,15 @@ import { defineConfig } from '@playwright/test'
 // PLAYWRIGHT_PREVIEW=1 runs the suite against the production bundle in dist/ (npm run build first);
 // otherwise it runs against the dev server, where development-only warnings also fail the suite.
 const preview = process.env.PLAYWRIGHT_PREVIEW === '1'
+// The performance budgets (tests/perf.spec.mjs) run on their own with `npm run test:perf`, never in the release suite.
+const perf = process.env.PLAYWRIGHT_PERF === '1'
 const origin = preview ? 'http://127.0.0.1:4173' : 'http://127.0.0.1:5173'
 
 export default defineConfig({
   testDir: './tests',
   // Pure-function suites run under Vitest (npm run test:unit); Playwright owns the browser.
-  testIgnore: '**/unit/**',
+  testIgnore: perf ? '**/unit/**' : ['**/unit/**', '**/perf.spec.mjs'],
+  testMatch: perf ? 'perf.spec.mjs' : undefined,
   fullyParallel: false,
   use: {
     baseURL: process.env.SHOWCASE_URL || origin,
