@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test'
+import { CHAMBER, createTissue, organSlack } from '../src/themes/wetware/tissue.ts'
 
 const test = base.extend({
   page: async ({ page }, use) => {
@@ -21,6 +22,8 @@ const log = (page) => page.getByRole('log', { name: 'Console logs' })
 const style = (page, selector, property) => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el).getPropertyValue(property), property)
 const frame = (page, selector) => page.locator(selector).first().evaluate((canvas) => canvas.toDataURL())
 const park = (page) => page.mouse.move(6, 6)
+const tools = ['.field-workspace', '.wet-organ', '.quantum-workspace', '.tel-bay', '.spatial-chamber', '.strata-gallery', '.infinity-room']
+const fullCanvases = ['.field-map', '.wet-tissue', '.quantum-sky', '.spatial-corridor', '.strata-section', '.infinity-field']
 
 async function drag(page, label, end) {
   const input = page.getByRole('slider', { name: label, exact: true })
@@ -59,6 +62,9 @@ function countPixels(page, selector, kind) {
 }
 
 test('a timestamped stress event and command editing survive all seven native consoles', async ({ page }) => {
+  // The boot log is stamped once and the status bar shows the minute: a fixed clock keeps the two from
+  // straddling a minute boundary. Timers and frames keep running.
+  await page.clock.setFixedTime(new Date('2026-01-01T09:41:30'))
   await page.goto('./#field')
   await page.locator('.field-node').first().click()
   await expect(prompt(page)).toBeFocused()
@@ -283,6 +289,244 @@ test('touching an orb swallows the viewer into its room, commands seed dots ther
   await page.getByRole('button', { name: 'Step out' }).click()
   await orb.click()
   await expect(prompt(page)).toBeFocused()
+})
+
+test('opening a tool moves keyboard focus into it and closing it returns focus to its launcher, in every paradigm', async ({ page }) => {
+  await page.goto('./#field')
+  for (let i = 0; i < names.length; i++) {
+    await switchTo(page, i)
+    const launcher = page.locator(launchers[i]).nth(1)
+    await launcher.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator(tools[i])).toBeVisible()
+    await expect.poll(() => page.evaluate((selector) => {
+      const tool = document.querySelector(selector)
+      const focused = document.activeElement
+      return Boolean(tool && focused && focused !== document.body && tool.contains(focused) && !focused.closest('[inert]'))
+    }, tools[i]), { message: `${names[i]}: focus did not enter the tool` }).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(launcher, `${names[i]}: focus did not return to the launcher`).toBeFocused()
+    // The launcher's name is its module, not a reading that changes every tick.
+    await expect(launcher).toHaveAccessibleName(/^Telemetry/)
+    await expect(launcher).not.toHaveAccessibleName(/\d/)
+    // Instrument readouts are not live regions: the console log is the one channel that announces.
+    await expect(page.locator('.iphone-screen output:not([aria-live="off"]):not([aria-hidden="true"])')).toHaveCount(0)
+  }
+  // Focus the operator has placed on the lab's own controls is not pulled into the specimen when a tool closes.
+  await page.locator(launchers[6]).nth(1).click()
+  const fader = page.getByRole('slider', { name: 'Proliferation', exact: true })
+  await fader.focus()
+  await page.keyboard.press('Escape')
+  await expect(page.locator(tools[6])).toBeHidden()
+  await expect(fader).toBeFocused()
+
+  // With a tool open, the number keys still walk the paradigms: a mounting tool does not take focus into a field.
+  await switchTo(page, 0)
+  await page.locator(launchers[0]).nth(2).click()
+  await expect(page.getByRole('textbox', { name: 'Search nodes' })).toBeVisible()
+  for (const [key, id] of [['2', 'wetware'], ['3', 'quantum'], ['4', 'telemetry']]) {
+    await page.keyboard.press(key)
+    await expect(page).toHaveURL(new RegExp(`#${id}$`))
+  }
+  await expect(page.getByRole('textbox', { name: 'Search nodes' })).toHaveValue('')
+  await page.keyboard.press('Escape')
+
+  // QuantumOS keeps its prompt on screen: a command that opens a tool leaves the prompt ready for the next one.
+  await switchTo(page, 2)
+  await prompt(page).focus()
+  for (const [command, title] of [['open telemetry', 'Telemetry'], ['open media', 'Media']]) {
+    await page.keyboard.type(command)
+    await page.keyboard.press('Enter')
+    await expect(page.locator('.quantum-workspace h3')).toHaveText(title)
+    await expect(prompt(page)).toBeFocused()
+  }
+  await page.keyboard.press('Escape')
+
+  // StrataOS: a console reopened while its gallery is still backfilling is a fresh visit, with the prompt focused.
+  await switchTo(page, 5)
+  const bed = page.locator(launchers[5]).first()
+  await bed.focus()
+  await page.keyboard.press('Enter')
+  await expect(prompt(page)).toBeFocused()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Enter')
+  await expect(prompt(page)).toBeFocused()
+  await page.keyboard.press('Escape')
+
+  // Opening a plate with the console left open focuses the paradigm's title, not the prompt inside it.
+  await page.locator(launchers[5]).first().click()
+  await page.getByRole('button', { name: 'All plates' }).click()
+  await page.getByRole('button', { name: 'Open StrataOS in focus mode' }).press('Enter')
+  await expect(page.getByRole('heading', { level: 1, name: 'StrataOS' })).toBeFocused()
+  await page.keyboard.press('Escape')
+
+  // Fullscreen replaces the tree: focus lands on the control that leaves it, and comes back to the one that entered.
+  await page.getByRole('button', { name: 'Native Fullscreen' }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('button', { name: 'Native Fullscreen' })).toBeFocused()
+})
+
+test('every canvas is sized for the scale it is shown at, on first paint and after a resize', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, deviceScaleFactor: 2, viewport: { width: 1440, height: 980 } })
+  try {
+    const page = await context.newPage()
+    // Backing pixels per CSS pixel against what the frame loop should choose: the device ratio times the
+    // scale the specimen is drawn at, held between 1 and 2.5.
+    const mismatches = (scope) => page.evaluate(([scope, selectors]) => selectors.flatMap((selector) => {
+      const canvas = document.querySelector(`${scope} ${selector}`)
+      if (!canvas) return []
+      const host = canvas.closest('section')
+      const wanted = Math.min(2.5, Math.max(1, devicePixelRatio * host.getBoundingClientRect().width / host.offsetWidth))
+      return Math.abs(canvas.width / canvas.offsetWidth - wanted) > .06 ? [`${selector}: ${(canvas.width / canvas.offsetWidth).toFixed(2)}, wanted ${wanted.toFixed(2)}`] : []
+    }), [scope, fullCanvases])
+    await page.goto('./')
+    await expect(page.locator('.plate canvas').first()).toBeVisible()
+    // Gallery plates are drawn at about a third of full size: one backing pixel per CSS pixel is enough.
+    // No resize is sent, so a ratio measured before the plate was scaled would stay wrong and time this out.
+    await expect.poll(() => mismatches('.plates-grid')).toEqual([])
+    const widths = await page.locator('.plates-grid canvas').evaluateAll((all) => all.filter((canvas) => canvas.offsetWidth === 377).map((canvas) => canvas.width))
+    expect(widths.length).toBeGreaterThanOrEqual(fullCanvases.length)
+    expect([...new Set(widths)]).toEqual([377])
+
+    await page.goto('./#field')
+    await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+    await expect(page.locator('.native-surface .field-map')).toBeVisible()
+    await expect.poll(() => mismatches('.native-surface')).toEqual([])
+    const before = await page.locator('.native-surface .field-map').evaluate((canvas) => canvas.width)
+    // A smaller window draws the surface smaller; once the resize has settled the canvas follows it.
+    await page.setViewportSize({ width: 700, height: 520 })
+    await expect.poll(() => page.locator('.native-surface .field-map').evaluate((canvas) => canvas.width)).toBeLessThan(before)
+    expect(await mismatches('.native-surface')).toEqual([])
+  } finally { await context.close() }
+})
+
+test('SpatialOS repaints its corridor only when the picture changes', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.corridorPaints = 0
+    const fill = CanvasRenderingContext2D.prototype.fillRect
+    CanvasRenderingContext2D.prototype.fillRect = function (...box) {
+      if (this.canvas.classList.contains('spatial-corridor')) window.corridorPaints++
+      return fill.apply(this, box)
+    }
+  })
+  await page.goto('./#spatial')
+  await park(page)
+  const paints = () => page.evaluate(() => window.corridorPaints)
+  // At rest the camera stops moving, and the corridor stops being painted.
+  await expect.poll(async () => {
+    const first = await paints()
+    await page.waitForTimeout(250)
+    return await paints() - first
+  }, { timeout: 8000 }).toBe(0)
+  const resting = await paints()
+  expect(resting).toBeGreaterThan(0)
+  // A pointer over the surface turns the camera, and the picture is painted again.
+  const box = await page.locator('.spatial-os').boundingBox()
+  await page.mouse.move(box.x + box.width * .8, box.y + box.height * .3, { steps: 6 })
+  await expect.poll(paints).toBeGreaterThan(resting)
+})
+
+test('a WetwareOS organ keeps its heading and every row inside its own membrane', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('./#wetware')
+  await page.evaluate(() => document.fonts.ready)
+  const swollen = () => expect.poll(() => page.locator('.wet-os').evaluate((el) => Number(el.style.getPropertyValue('--swell')))).toBeGreaterThan(.99)
+  const cells = createTissue().cells
+  // Everything an organ draws is measured where it is drawn and tested against the chamber the cell swells
+  // into, shrunk by how far that cell's membrane can dip inward at this Membrane Pulse. Inputs are measured
+  // by their boxes; list rows only over the part of them the list shows.
+  const escaped = (cell, pulse) => page.locator('.wet-os').evaluate((host, { chamber, slack }) => {
+    const frame = host.getBoundingClientRect()
+    const scale = frame.width / 377
+    const out = []
+    for (const row of host.querySelectorAll('.wet-organ header > *, .wet-organ > [data-fit], .wet-organ [data-fit-rows] > *')) {
+      const list = row.parentElement.matches('[data-fit-rows]') ? row.parentElement.getBoundingClientRect() : null
+      const range = document.createRange()
+      range.selectNodeContents(row)
+      const boxes = [...range.getClientRects()]
+      for (const drawn of boxes.length ? boxes : [row.getBoundingClientRect()]) {
+        const rect = list ? { left: drawn.left, right: drawn.right, top: Math.max(drawn.top, list.top), bottom: Math.min(drawn.bottom, list.bottom) } : drawn
+        if (rect.right <= rect.left || rect.bottom <= rect.top) continue
+        for (const [x, y] of [[rect.left, rect.top], [rect.right, rect.top], [rect.left, rect.bottom], [rect.right, rect.bottom]]) {
+          const u = ((x - frame.left) / scale - chamber.x) / (chamber.rx * (1 - slack))
+          const v = ((y - frame.top) / scale - chamber.y) / (chamber.ry * (1 - slack))
+          if (Math.hypot(u, v) > 1) out.push(`${(row.textContent || row.className).slice(0, 24)} at ${Math.hypot(u, v).toFixed(3)}`)
+        }
+      }
+    }
+    return [...new Set(out)]
+  }, { chamber: CHAMBER, slack: organSlack(cells[cell], pulse) })
+
+  for (const pulse of [44, 100]) {
+    if (pulse === 100) await drag(page, 'Membrane Pulse', 'max')
+    for (let cell = 0; cell < 4; cell++) {
+      await page.locator('.wet-cell').nth(cell).click()
+      await swollen()
+      expect(await escaped(cell, pulse), `organ ${cell} at pulse ${pulse}`).toEqual([])
+      await expect(page.locator('.wet-organ h3')).toBeVisible()
+      await page.keyboard.press('Escape')
+    }
+  }
+
+  // Neural Search: opened results and scrolling keep every row on screen at a usable width, and a closed
+  // row keeps one height, so fitting a row to the wall never moves the rows after it.
+  await page.locator('.wet-cell').nth(2).click()
+  await swollen()
+  const rows = () => page.locator('.wet-memories').evaluate((list) => {
+    const box = list.getBoundingClientRect()
+    return [...list.children].filter((row) => { const r = row.getBoundingClientRect(); return r.bottom > box.top + 1 && r.top < box.bottom - 1 })
+      .map((row) => ({ width: Math.round(row.getBoundingClientRect().width), height: Math.round(row.offsetHeight * 10) / 10, open: !!row.querySelector('[aria-expanded="true"]') }))
+  })
+  const closedHeight = (await rows())[0].height
+  for (const name of [/Janus Aperture/, /Alabaster Array/]) {
+    await page.getByRole('button', { name }).click()
+    const shown = await rows()
+    expect(shown.every((row) => row.width >= 90), JSON.stringify(shown)).toBe(true)
+    expect(shown.filter((row) => !row.open).every((row) => row.height === closedHeight), JSON.stringify(shown)).toBe(true)
+    expect(await escaped(2, 100)).toEqual([])
+    await page.getByRole('button', { name }).click()
+  }
+  for (let step = 0; step < 24; step++) {
+    await page.locator('.wet-memories').evaluate((list, by) => { list.scrollTop += by }, step < 12 ? 9 : -9)
+    await page.waitForTimeout(20)
+    const shown = await rows()
+    expect(shown.every((row) => row.width >= 90 && row.height === closedHeight), `scroll step ${step}: ${JSON.stringify(shown)}`).toBe(true)
+  }
+  expect(await escaped(2, 100)).toEqual([])
+  // With nothing found, the note takes the list's place and stays one line inside the cell.
+  await page.getByRole('textbox', { name: 'Search nodes' }).fill('no such specimen')
+  await expect(page.getByText('No matching nodes.')).toBeVisible()
+  expect(await escaped(2, 100)).toEqual([])
+  expect(await page.getByText('No matching nodes.').evaluate((note) => note.offsetHeight)).toBeLessThan(20)
+})
+
+test('pressed controls keep readable text on their fill', async ({ page }) => {
+  const ratio = (locator) => locator.evaluate((element) => {
+    const channel = (value) => { const unit = value / 255; return unit <= .03928 ? unit / 12.92 : ((unit + .055) / 1.055) ** 2.4 }
+    const luminance = (colour) => { const [r, g, b] = colour.match(/[\d.]+/g).map(Number); return .2126 * channel(r) + .7152 * channel(g) + .0722 * channel(b) }
+    const style = getComputedStyle(element)
+    const [dark, light] = [luminance(style.color), luminance(style.backgroundColor)].sort((a, b) => a - b)
+    return (light + .05) / (dark + .05)
+  })
+  await page.goto('./#infinity')
+  await page.locator('.infinity-orb').nth(1).click()
+  for (const channel of ['Core', 'Field', 'Link', 'Audio']) {
+    const key = page.getByRole('button', { name: channel, exact: true })
+    await key.click()
+    await park(page)
+    await expect(key).toHaveAttribute('aria-pressed', 'true')
+    expect(await ratio(key), `InfinityOS channel ${channel}`).toBeGreaterThanOrEqual(4.5)
+  }
+  await page.keyboard.press('Escape')
+  await switchTo(page, 3)
+  await page.locator('.tel-row').nth(1).click()
+  const stress = page.locator('.tel-stress')
+  await stress.click()
+  await park(page)
+  await expect(stress).toHaveAttribute('aria-pressed', 'true')
+  expect(await ratio(stress), 'TelemetryOS stress key').toBeGreaterThanOrEqual(4.5)
 })
 
 test('engine settings survive a reload and corrupt storage falls back to the defaults', async ({ page }) => {
