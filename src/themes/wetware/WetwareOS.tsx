@@ -6,11 +6,12 @@ import type { ModuleId } from '../../data/osData'
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions, useOSSnapshot } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import type { OSState } from '../../state/osStore'
 import WetwareOrgan from './WetwareOrgan'
 import { paintTissue } from './renderer'
 import type { Organ } from './renderer'
-import { CELL_HOMES, CELL_RADII, CORE, FIRST_BUD, NUCLEUS, PULSE_HOLD_MS, SURFACE, createTissue, firePulse, settleTissue, stepTissue } from './tissue'
+import { CELL_HOMES, CELL_RADII, CORE, FIRST_BUD, NUCLEUS, PULSE_HOLD_MS, SURFACE, createTissue, firePulse, organSlack, settleTissue, stepTissue } from './tissue'
 import './wetware.css'
 
 const roles = ['Nerve center', 'Sensory stream', 'Memory colony', 'Resonance cell']
@@ -64,6 +65,7 @@ export default function WetwareOS({ interactive }: ParadigmProps) {
   })
 
   useEffect(invalidate, [invalidate, selected, pulse, cytoplasm, speed, stress])
+  useToolFocus(host, active, interactive, { tool: '.wet-organ', launchers: '.wet-cell' })
   useEffect(() => () => clearTimeout(hold.current), [])
 
   function signal(cell: number | 'all') {
@@ -113,7 +115,7 @@ export default function WetwareOS({ interactive }: ParadigmProps) {
         <strong>{module.label}</strong><span>{roles[index]}</span>
       </button>)}
     </div>
-    {active && <WetwareOrgan active={active} onSignal={() => signal(selected)} />}
+    {active && <WetwareOrgan active={active} slack={organSlack(tissue.cells[selected], pulse)} onSignal={() => signal(selected)} />}
     <button type="button" className="wet-nucleus" style={box(NUCLEUS)} aria-label={active ? 'Return to membrane' : 'Open nucleus command'}
       disabled={!interactive} onClick={() => active ? actions.setActiveModule(null) : open('console')}>
       <strong>{active ? 'Rejoin' : 'Nucleus'}</strong>

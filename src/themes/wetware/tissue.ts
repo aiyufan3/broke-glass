@@ -6,7 +6,12 @@ export const OUTLINE_POINTS = 72
 export const CORE = 4
 export const NUCLEUS = 5
 export const FIRST_BUD = 6
-const CHAMBER = { x: 188.5, y: 400, rx: 168, ry: 218 } as const
+/** The chamber a selected cell swells into. */
+export const CHAMBER = { x: 188.5, y: 400, rx: 168, ry: 218 } as const
+/** The box a swollen organ's contents are laid out in. The membrane decides how much of each row is usable. */
+export const ORGAN = { left: 46, top: 228, width: 285, height: 350 } as const
+/** How much of its harmonics a fully swollen cell gives up: an organ holds a calmer outline. */
+const CALM = .62
 const TAU = Math.PI * 2
 const HARMONICS = [2, 3, 4, 5] as const
 
@@ -113,9 +118,36 @@ function membrane(cell: Cell, theta: number, breath: number, lag: number, gain: 
   return radius
 }
 
+/** Membrane Pulse as the gain on every harmonic of the breath. */
+function vigorOf(pulse: number) {
+  return .5 + pulse * .011
+}
+
+/**
+ * The largest share of its radius an organ's membrane dips inward at any phase of its breath, at a
+ * Membrane Pulse setting: every harmonic at its trough at once.
+ */
+export function organSlack(cell: Cell, pulse: number) {
+  return cell.amplitudes.reduce((sum, amplitude) => sum + Math.abs(amplitude), 0) * vigorOf(pulse) * (1 - CALM)
+}
+
+/**
+ * The part of a row between heights `top` and `bottom` that lies inside a swollen organ's membrane
+ * through its whole breath, with `clearance` pixels to spare. Null where the membrane leaves no room.
+ * An organ's contents are set inside this span, so no label can cross its own cell wall.
+ */
+export function chamberSpan(slack: number, top: number, bottom: number, clearance = 10) {
+  const rx = CHAMBER.rx * (1 - slack) - clearance
+  const ry = CHAMBER.ry * (1 - slack) - clearance
+  const reach = Math.max(Math.abs(top - CHAMBER.y), Math.abs(bottom - CHAMBER.y)) / ry
+  if (reach >= 1) return null
+  const half = rx * Math.sqrt(1 - reach * reach)
+  return { left: CHAMBER.x - half, right: CHAMBER.x + half }
+}
+
 /** Harmonic gain of a cell: Membrane Pulse deepens the breath, and a swollen organ holds a calmer outline. */
 function gainOf(cell: Cell) {
-  return cell.vigor * (1 - cell.swell * .62)
+  return cell.vigor * (1 - cell.swell * CALM)
 }
 
 export function membranePoint(cell: Cell, theta: number, breath: number, scale = 1, lag = 0): Vec {
@@ -202,7 +234,7 @@ function targetOf(tissue: Tissue, index: number) {
 function measure(tissue: Tissue, inputs: TissueInputs) {
   for (const cell of tissue.cells) {
     cell.swell = Math.min(1.1, Math.max(0, (cell.rx - cell.spec.rx) / (CHAMBER.rx - cell.spec.rx)))
-    cell.vigor = .5 + inputs.pulse * .011
+    cell.vigor = vigorOf(inputs.pulse)
   }
   tissue.swell = tissue.selected >= 0 ? Math.min(1, tissue.cells[tissue.selected].swell) : 0
 }

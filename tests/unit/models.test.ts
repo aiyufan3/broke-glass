@@ -20,7 +20,7 @@ import {
   settleDots, spacingFor, stepDots,
 } from '../../src/themes/infinity/dots'
 import type { DotField, InfinityInputs } from '../../src/themes/infinity/dots'
-import { CORE, NUCLEUS, PULSE_HOLD_MS, bezierPoint, bezierTangent, createTissue, firePulse, settleTissue, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
+import { CHAMBER, CORE, NUCLEUS, ORGAN, PULSE_HOLD_MS, bezierPoint, bezierTangent, chamberSpan, createTissue, firePulse, membranePoint, organSlack, settleTissue, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
 
 const FRAME = 1 / 60
 const steps = (seconds: number) => Math.round(seconds / FRAME)
@@ -120,6 +120,51 @@ describe('FieldOS · potential', () => {
 
 describe('WetwareOS · tissue', () => {
   const inputs = { selected: -1, pulse: 44, speed: 53, stress: false }
+
+  test('every row of an organ lies inside its own membrane through the whole breath, at any Membrane Pulse', () => {
+    let rows = 0
+    let tightest = Infinity
+    for (const selected of [0, 1, 2, 3]) {
+      for (const pulse of [0, 44, 100]) {
+        const tissue = createTissue()
+        settleTissue(tissue, { ...inputs, selected, pulse }, 0)
+        const cell = tissue.cells[selected]
+        expect([cell.x, cell.y, cell.rx, cell.ry]).toEqual([CHAMBER.x, CHAMBER.y, CHAMBER.rx, CHAMBER.ry])
+        const slack = organSlack(cell, pulse)
+        // How far inside the membrane a point is, as a share of the membrane's radius in that direction.
+        const depth = (x: number, y: number, breath: number) => {
+          const theta = Math.atan2((y - cell.y) / cell.ry, (x - cell.x) / cell.rx)
+          const wall = membranePoint(cell, theta, breath)
+          return 1 - Math.hypot(x - cell.x, y - cell.y) / Math.hypot(wall.x - cell.x, wall.y - cell.y)
+        }
+        for (let top = ORGAN.top; top + 12 <= ORGAN.top + ORGAN.height; top += 9) {
+          for (const height of [12, 34, 60]) {
+            const span = chamberSpan(slack, top, top + height)
+            if (!span) continue
+            rows++
+            expect(span.right).toBeGreaterThan(span.left)
+            expect((span.left + span.right) / 2).toBeCloseTo(CHAMBER.x, 9)
+            for (let breath = 0; breath < 40; breath += 1.7) {
+              for (const [x, y] of [[span.left, top], [span.right, top], [span.left, top + height], [span.right, top + height]]) {
+                tightest = Math.min(tightest, depth(x, y, breath))
+              }
+            }
+          }
+        }
+        // The label and the title of the organ both have room at the top of the box.
+        expect(chamberSpan(slack, ORGAN.top + 12, ORGAN.top + 23)).not.toBeNull()
+      }
+    }
+    expect(rows).toBeGreaterThan(900)
+    expect(tightest).toBeGreaterThan(0)
+    // A stronger pulse lets the membrane dip further in, so the usable span narrows; with no room it is null.
+    const calm = chamberSpan(.02, 260, 294)
+    const wild = chamberSpan(.16, 260, 294)
+    expect(wild!.right - wild!.left).toBeLessThan(calm!.right - calm!.left)
+    expect(chamberSpan(.16, CHAMBER.y - CHAMBER.ry, CHAMBER.y - CHAMBER.ry + 12)).toBeNull()
+    const tissue = createTissue()
+    expect(organSlack(tissue.cells[0], 100)).toBeGreaterThan(organSlack(tissue.cells[0], 0))
+  })
 
   test('the colony is reproducible: two seeded tissues are identical', () => {
     const [a, b] = [createTissue(), createTissue()]
