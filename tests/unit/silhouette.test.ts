@@ -33,6 +33,10 @@ import { paradigmIds } from '../../src/data/paradigms'
  *
  *              field   wetware quantum telemetry spatial strata  infinity
  *   infinity   0.7888  0.7258  0.8446  0.1244    0.6212  0.3523  —
+ *
+ * Re-measured once gallery canvases were drawn at the backing ratio of their real scale (one device
+ * pixel per CSS pixel at gallery size), which shifts every plate by a level or two: the closest pair is
+ * FieldOS / QuantumOS at 0.0610, and InfinityOS reads 0.7891  0.7267  0.8441  0.1240  0.6212  0.3518.
  */
 export const SILHOUETTE_FLOOR = 0.043
 

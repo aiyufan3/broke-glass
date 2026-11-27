@@ -110,6 +110,8 @@ src/themes/index.ts       one line in `surfaces`
 | Neural Search | textbox `Search nodes` · result buttons with `aria-expanded` · an action that calls `inspectNode` |
 | Media | slider `Playback position` · buttons `Play` `Pause` `Previous track` `Next track` `Sound` |
 
+8. Keep the keyboard contract with `useToolFocus(host, active, interactive, { tool, launchers })` from `src/state/toolFocus`: opening a tool moves focus into it, closing it returns focus to the control it was opened from or to that module's launcher. Give each launcher `aria-label={module.label}`, and mark readouts that change on their own `aria-live="off"` or `aria-hidden`: the console log is the one channel that announces.
+
 **The silhouette rule**
 
 Under `grayscale(1) blur(12px)` the home screen must be identifiable by its distribution of mass alone, beside the other seven. Turn on **Silhouette test** in the gallery, then print the plate:
@@ -138,7 +140,7 @@ If the new column reads as one of the existing seven, it is not a new paradigm.
 | Paradigm | Model | Module | Try |
 | --- | --- | --- | --- |
 | FieldOS | Scalar potential of one singularity, four softened point masses and a pointer probe, contoured by marching squares. Bodies are damped springs with short-range repulsion. Opening a tool sends two wave fronts whose crossings are drawn. | `field/potential.ts` | Set Gravity Warp to 0. Every contour becomes a circle. |
-| WetwareOS | Membranes are low-order harmonics around an ellipse. Vessels are cubic curves from hilum to hilum, so they stay on both membranes while cells migrate on under-damped springs. Pulses dilate the vessel wall. | `wetware/tissue.ts` | Move Synapse Speed. Each change fires a pulse from the nucleus. |
+| WetwareOS | Membranes are low-order harmonics around an ellipse. Vessels are cubic curves from hilum to hilum, so they stay on both membranes while cells migrate on under-damped springs. Pulses dilate the vessel wall. A swollen organ sets every row of its contents inside the span of its own membrane at that height. | `wetware/tissue.ts` | Move Synapse Speed. Each change fires a pulse from the nucleus. |
 | QuantumOS | Up to 4,200 seeded samples, each blended between two states. Observation moves a coordinate's samples onto bracket marks. Tools re-form the cloud: a barcode of the last command, the latency trace, a standing wave, one cluster per search node. | `quantum/cloud.ts` | Hover a coordinate. A cyan reticle runs out to the rulers. |
 | TelemetryOS | A relief function of position, depth and pass number. The beam re-acquires the specimen on every pass. The oscilloscope plots the selected depth line and a peak finder tracks its maximum. | `telemetry/signal.ts` | Switch channel. Scan band, trace, peak marker and SEM number follow. |
 | SpatialOS | A camera that reproduces the CSS transform order, so the canvas corridor and the DOM slabs share one projection. A dive aligns the camera with an aperture, then pushes through it into a lit room. | `spatial/camera.ts` | Select an aperture. The camera goes through it. |
