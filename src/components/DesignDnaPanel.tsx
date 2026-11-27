@@ -5,6 +5,7 @@ import { paradigmPrompt, paradigms } from '../data/paradigms'
 import type { EngineSlot, ParadigmId } from '../data/paradigms'
 import { useOS, useOSActions } from '../state/osStore'
 import { themes } from '../themes'
+import { accentText } from './accentText'
 
 const shortcuts = [
   [`1–${themes.length}`, 'Switch paradigm'],
@@ -66,7 +67,7 @@ export default function DesignDnaPanel({ id, onSwitch, titleRef }: {
       <nav className="dna-switch" aria-label="Switch theme" style={{ '--switch-count': themes.length } as CSSProperties}>
         {themes.map(({ id: candidate, name, accent }, index) => <button type="button" key={candidate}
           aria-keyshortcuts={String(index + 1)} aria-pressed={id === candidate} onClick={() => onSwitch(candidate)}
-          style={{ '--switch-accent': accent } as CSSProperties}>
+          style={{ '--switch-accent': accent, '--switch-accent-text': accentText(accent) } as CSSProperties}>
           <span aria-hidden="true">{index + 1}</span>{name}
         </button>)}
       </nav>

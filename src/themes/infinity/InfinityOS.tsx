@@ -4,6 +4,7 @@ import type { ModuleId } from '../../data/osData'
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import InfinityTools from './InfinityTools'
 import { ORBS, SURFACE, burst, createDots, dotCount, orbView, settleDots, stepDots } from './dots'
 import { paintInfinity } from './renderer'
@@ -17,8 +18,6 @@ export default function InfinityOS({ interactive }: ParadigmProps) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const launchers = useRef<(HTMLButtonElement | null)[]>([])
   const readout = useRef<HTMLOutputElement>(null)
-  /** The orb the viewer is inside, or was last inside: stepping out returns focus to it. */
-  const entered = useRef(-1)
   const written = useRef<Record<string, string>>({})
   const [field] = useState(() => createDots())
   const active = useOS((state) => state.activeModule, interactive)
@@ -31,13 +30,11 @@ export default function InfinityOS({ interactive }: ParadigmProps) {
   const [leaving, setLeaving] = useState<ModuleId | null>(null)
   const shown = active ?? leaving
   const shownIndex = shown ? modules.findIndex((module) => module.id === shown) : -1
-  // Each entry is a new visit: re-entering an orb that is still closing remounts its tool, so focus lands in it again.
-  const [visit, setVisit] = useState(0)
-  useEffect(() => {
-    if (!active) return
-    setLeaving(active)
-    setVisit((count) => count + 1)
-  }, [active])
+  // Each entry is a new visit: re-entering an orb that is still closing remounts its tool, so focus lands in it
+  // again. The visit is counted while rendering, so a tool mounts once, already under the key it keeps.
+  const [entry, setEntry] = useState({ active, visit: 0 })
+  if (entry.active !== active) setEntry({ active, visit: entry.visit + (active ? 1 : 0) })
+  useEffect(() => { if (active) setLeaving(active) }, [active])
 
   function write(key: string, value: string, apply: (value: string) => void) {
     if (written.current[key] === value) return
@@ -79,11 +76,8 @@ export default function InfinityOS({ interactive }: ParadigmProps) {
     invalidate()
   }, [field, impulse, invalidate])
 
-  // Stepping out of an orb returns focus to that orb, however the viewer got inside it.
-  useEffect(() => {
-    if (selected >= 0) entered.current = selected
-    else if (entered.current >= 0) launchers.current[entered.current]?.focus({ preventScroll: true })
-  }, [selected])
+  // Entering an orb moves focus into its room; stepping out returns it to that orb.
+  useToolFocus(host, active, interactive, { tool: '.infinity-room', launchers: '.infinity-orb' })
 
   function enter(module: ModuleId) {
     if (interactive) actions.setActiveModule(module)
@@ -94,7 +88,7 @@ export default function InfinityOS({ interactive }: ParadigmProps) {
     <header className="infinity-head">
       <p><span>Lab / 07 · Infinity room</span><span>{system.label} · {stress ? 'Obliterating' : system.status}</span></p>
       <h2>Infinity<span>OS</span></h2>
-      <output className="infinity-readout" ref={readout} />
+      <output className="infinity-readout" aria-live="off" ref={readout} />
     </header>
     <nav className="infinity-orbs" aria-label="Orbs">
       {modules.map((module, index) => <button key={module.id} type="button" className="infinity-orb"
@@ -104,6 +98,6 @@ export default function InfinityOS({ interactive }: ParadigmProps) {
         <span>{module.label}</span>
       </button>)}
     </nav>
-    {shown && <InfinityTools key={`${shown}-${visit}`} active={shown} closing={!active} hue={ORBS[shownIndex].hue} />}
+    {shown && <InfinityTools key={`${shown}-${entry.visit}`} active={shown} closing={!active} hue={ORBS[shownIndex].hue} />}
   </section>
 }

@@ -13,7 +13,7 @@ export default function StrataTools({ active, closing }: { active: ModuleId; clo
   const actions = useOSActions()
   const index = modules.findIndex((module) => module.id === active)
   const { label } = modules[index]
-  return <section className="strata-gallery" data-tool={active} aria-label={label} key={active} inert={closing}>
+  return <section className="strata-gallery" data-tool={active} aria-label={label} inert={closing}>
     <div className="strata-face">
       <header className="strata-gallery-head">
         <p>Gallery 0{index + 1} · {FORMATIONS[index]}</p>

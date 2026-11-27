@@ -9,6 +9,7 @@
   --infinity-display: Futura, "Futura PT", "Avenir Next", Avenir, "Century Gothic", "Trebuchet MS", sans-serif;
   --infinity-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
   --infinity-swell: 0;
+  --infinity-on-hue: var(--infinity-white);
   --infinity-orb: 0px;
   /* Paper for text: a field of the five hues, every one a dot. */
   --infinity-confetti:
@@ -83,7 +84,7 @@
   display: grid; place-items: center; width: 54px; height: 54px; border: 5px solid var(--infinity-hue); border-radius: 50%;
   background: var(--infinity-white); font: 700 10px/1 var(--infinity-mono);
 }
-.infinity-quick button:hover, .infinity-channels button[aria-pressed="true"] { color: var(--infinity-white); background: var(--infinity-hue); }
+.infinity-quick button:hover, .infinity-channels button[aria-pressed="true"] { color: var(--infinity-on-hue); background: var(--infinity-hue); }
 
 .infinity-telemetry { display: grid; justify-items: center; gap: 12px; }
 .infinity-latency {
@@ -118,7 +119,7 @@
 .infinity-result span { font: 600 9px/1.2 var(--infinity-mono); letter-spacing: .08em; text-transform: uppercase; }
 .infinity-result[aria-expanded="true"] i { box-shadow: 0 0 0 4px var(--infinity-white), 0 0 0 7px var(--infinity-hue); }
 .infinity-detail { display: grid; justify-items: start; gap: 8px; margin: 8px 6px 4px; padding: 14px 36px; border-radius: 999px; background: var(--infinity-white); font-size: 12.5px; line-height: 1.35; }
-.infinity-detail button { color: var(--infinity-white); background: var(--infinity-hue); border-color: var(--infinity-white); }
+.infinity-detail button { color: var(--infinity-on-hue); background: var(--infinity-hue); border-color: var(--infinity-white); }
 .infinity-empty { padding: 8px 16px; border-radius: 999px; background: var(--infinity-white); font: 600 11px/1 var(--infinity-mono); }
 
 .infinity-media { display: grid; justify-items: center; gap: 12px; width: 100%; }

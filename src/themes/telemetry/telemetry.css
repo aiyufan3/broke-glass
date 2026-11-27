@@ -133,7 +133,7 @@
 .tel-controls button:last-child { border-right: 0; }
 .tel-stress { border: 1px solid var(--tel-ink); }
 .tel-controls button:is(:hover, [aria-pressed="true"]) { color: #fff; background: var(--tel-blue); }
-.tel-stress:is(:hover, [aria-pressed="true"]) { color: #fff; background: var(--tel-thermal); }
+.tel-stress:is(:hover, [aria-pressed="true"]) { color: var(--tel-ink); background: var(--tel-thermal); }
 .tel-tape span { color: var(--tel-graphite); font-weight: 700; line-height: 1.35; text-align: right; }
 .tel-bay-media input { width: 100%; height: 18px; appearance: none; background: transparent; cursor: ew-resize; }
 .tel-bay-media input::-webkit-slider-runnable-track { height: 3px; background: var(--tel-ink); }

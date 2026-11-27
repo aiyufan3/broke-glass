@@ -4,18 +4,20 @@ import { channels, clockText, modules, quickCommands, searchNodes, tracks } from
 import type { ModuleId } from '../../data/osData'
 import { surface } from '../../state/frameLoop'
 import { useCommandLine, useOS, useOSActions, useRecentLogs } from '../../state/osStore'
-import { HUES } from './dots'
+import { HUES, INKS } from './dots'
 import { paintDotHistogram } from './renderer'
 
 const HISTOGRAM = { width: 272, height: 150 } as const
-type Hued = CSSProperties & Record<'--infinity-hue', string>
+type Hued = CSSProperties & Record<'--infinity-hue' | '--infinity-on-hue', string>
+/** A dot's hue with the ink that reads on it. */
+const hued = (index: number): Hued => ({ '--infinity-hue': HUES[index % HUES.length], '--infinity-on-hue': INKS[index % HUES.length] })
 
 /** The tool is furniture inside the swallowed orb: every piece is a dot, a ring of dots or a pill. */
 export default function InfinityTools({ active, closing, hue }: { active: ModuleId; closing: boolean; hue: number }) {
   const actions = useOSActions()
   const index = modules.findIndex((module) => module.id === active)
   const { label } = modules[index]
-  const style: Hued = { '--infinity-hue': HUES[hue] }
+  const style = hued(hue)
   return <section className="infinity-room" data-tool={active} aria-label={label} inert={closing} style={style}>
     <header className="infinity-room-head">
       <p>Orb 0{index + 1} · inside</p>
@@ -36,7 +38,7 @@ function InfinityConsole() {
   return <>
     <div className="infinity-ring">
       <ol className="infinity-log" role="log" aria-label="Console logs">
-        {logs.map((log, index) => <li key={log.id} data-level={log.level} style={{ '--infinity-hue': HUES[index % HUES.length] } as Hued}>
+        {logs.map((log, index) => <li key={log.id} data-level={log.level} style={hued(index)}>
           <time>{log.timestamp}</time><span>{log.input && <b>{log.input} · </b>}{log.output}</span>
         </li>)}
       </ol>
@@ -52,7 +54,7 @@ function InfinityConsole() {
       <button type="submit" aria-label="Run command">Seed</button>
     </form>
     <div className="infinity-quick" role="group" aria-label="Quick commands">
-      {quickCommands.map((command, index) => <button type="button" key={command} style={{ '--infinity-hue': HUES[index % HUES.length] } as Hued}
+      {quickCommands.map((command, index) => <button type="button" key={command} style={hued(index)}
         onClick={() => actions.execute(command)}>{command}</button>)}
     </div>
   </>
@@ -79,7 +81,7 @@ function InfinityTelemetry() {
     </figure>
     <div className="infinity-channels" role="group" aria-label="Telemetry channels">
       {channels.map((channel, index) => <button type="button" key={channel} aria-pressed={selected === index}
-        style={{ '--infinity-hue': HUES[index] } as Hued} onClick={() => actions.setChannel(index)}>{channel}</button>)}
+        style={hued(index)} onClick={() => actions.setChannel(index)}>{channel}</button>)}
     </div>
     <button type="button" className="infinity-stress" aria-pressed={stress} onClick={() => actions.setStress(!stress)}>Stress mode · {stress ? 'obliterating' : 'calm'}</button>
   </div>
@@ -92,7 +94,7 @@ function InfinitySearch() {
   const [expanded, setExpanded] = useState<string | null>(null)
   return <>
     <input className="infinity-query" aria-label="Search nodes" value={query} onChange={(event) => actions.setSearch(event.currentTarget.value)} placeholder="Call an orb from the horizon" />
-    <ul className="infinity-results">{results.map((node, index) => <li key={node.coordinate} style={{ '--infinity-hue': HUES[index % HUES.length], '--infinity-order': index } as Hued}>
+    <ul className="infinity-results">{results.map((node, index) => <li key={node.coordinate} style={{ ...hued(index), '--infinity-order': index } as Hued}>
       <button type="button" className="infinity-result" aria-expanded={expanded === node.coordinate}
         onClick={() => setExpanded(expanded === node.coordinate ? null : node.coordinate)}>
         <i aria-hidden="true" /><strong>{node.label}</strong><span>{node.coordinate} · {node.score}%</span>
@@ -114,7 +116,7 @@ function InfinityMedia() {
   const sound = useOS((state) => state.mediaState.soundEnabled)
   const track = tracks[trackIndex]
   // The sun dot swells with the track: a quarter of its size at the start, full at the end.
-  const sun = { '--infinity-hue': HUES[1], '--infinity-sun': (.25 + .75 * progress / track.duration).toFixed(3) } as Hued
+  const sun = { ...hued(1), '--infinity-sun': (.25 + .75 * progress / track.duration).toFixed(3) } as Hued
   return <div className="infinity-media" data-playing={playing}>
     <div className="infinity-sun" style={sun} aria-hidden="true" />
     <p className="infinity-track"><span>Track 0{trackIndex + 1} of 0{tracks.length}</span><strong>{track.title}</strong><span>{track.frequency} Hz {track.wave} · {clockText(progress)} / {clockText(track.duration)}</span></p>

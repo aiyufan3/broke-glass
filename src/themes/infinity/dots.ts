@@ -1,3 +1,5 @@
+import { inkOn } from '../../data/contrast'
+
 export type Vec = { x: number; y: number }
 
 export const SURFACE = { width: 377, height: 836 } as const
@@ -27,6 +29,8 @@ export const MAX_DOTS = 2400
 export const SEED_SHARE = .62
 /** Red, yellow, blue, green, pink. */
 export const HUES = ['#E60012', '#FFD400', '#0057FF', '#00A651', '#FF3EA5'] as const
+/** The ink that reads on each hue when a dot carries a label: white on red and blue, black on the light three. */
+export const INKS = HUES.map((hue) => inkOn(hue))
 /** Coverage at Obliteration 0: the dots never vanish. */
 const BASE_COVERAGE = .24
 /** At coverage 1 a dot's radius is this share of the gap to its neighbour, so neighbours overlap into solid colour. */

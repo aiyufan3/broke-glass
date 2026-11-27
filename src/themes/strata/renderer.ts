@@ -37,6 +37,12 @@ function ramp(depth: number, tone: number) {
 
 const rgb = ([r, g, b]: number[]) => `rgb(${r} ${g} ${b})`
 
+/** The colour of a bed's rock where it lies now, as a hex string: what a label set on that bed sits on. */
+export function bedRock(strata: Strata, bed: number) {
+  const depth = ((strata.base[bed] + strata.base[bed + 1]) / 2 - SECTION.top) / (SECTION.bottom - SECTION.top)
+  return `#${ramp(depth, strata.tone[bed]).map((value) => value.toString(16).padStart(2, '0')).join('')}`
+}
+
 /**
  * Lithology symbols of a stratigraphic column: sandstone stipple, shale dashes, limestone brick,
  * siltstone fine stipple and conglomerate pebbles. Each is a small repeating tile, inked or chalked.

@@ -41,12 +41,12 @@
   text-align: left; pointer-events: auto; transition: opacity .3s;
 }
 .strata-bed::before { content: ""; position: absolute; left: 0; top: 50%; width: 14px; height: 1px; background: var(--strata-oxide); }
-.strata-bed small { font: 600 8.5px/1 var(--strata-mono); letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.strata-bed small { font: 600 8.5px/1 var(--strata-mono); letter-spacing: .12em; text-transform: uppercase; }
 .strata-bed strong { font-size: 18px; font-weight: 500; line-height: 1.05; }
 .strata-bed[data-depth="deep"] { color: var(--strata-chalk); }
 .strata-bed:hover:enabled strong { text-decoration: underline 1px var(--strata-oxide); text-underline-offset: 4px; }
 .strata-bed[aria-pressed="true"] { visibility: hidden; }
-.strata-os[data-active] .strata-bed { opacity: .6; }
+.strata-os[data-active] .strata-bed { opacity: 1; }
 /* Beds beside an open gallery are pressed thin, so their labels shed the epoch line. */
 .strata-os[data-active] .strata-bed small { display: none; }
 .strata-os[data-active] .strata-bed strong { font-size: 14px; }

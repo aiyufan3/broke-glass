@@ -5,6 +5,7 @@ import type { ModuleId } from '../../data/osData'
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions, useOSSnapshot } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import type { OSState } from '../../state/osStore'
 import FieldTools from './FieldTools'
 import { BODY_HOMES, CORE, SURFACE, bodyReading, createField, droppedSegments, emitRipple, probeReading, settleField, stepField, totalMass } from './potential'
@@ -102,6 +103,7 @@ export default function FieldOS({ interactive }: ParadigmProps) {
   })
 
   useEffect(invalidate, [invalidate, warp, levels, drift, stress, selected])
+  useToolFocus(host, active, interactive, { tool: '.field-workspace', launchers: '.field-node' })
 
   const seenImpulse = useRef(impulse.seq)
   useEffect(() => {
@@ -156,7 +158,7 @@ export default function FieldOS({ interactive }: ParadigmProps) {
     {modules.map((module, index) => <button type="button" key={module.id} className="field-node"
       style={{ left: BODY_HOMES[index].x, top: BODY_HOMES[index].y }}
       ref={(element) => { bodyElements.current[index] = element }}
-      disabled={!interactive} tabIndex={active ? -1 : undefined} aria-pressed={active === module.id}
+      disabled={!interactive} tabIndex={active ? -1 : undefined} aria-label={module.label} aria-pressed={active === module.id}
       onPointerEnter={() => excite(index)} onPointerLeave={() => calm(index)}
       onFocus={(event) => { if (event.currentTarget.matches(':focus-visible')) excite(index) }} onBlur={() => calm(index)}
       onPointerDown={(event) => {
@@ -184,7 +186,7 @@ export default function FieldOS({ interactive }: ParadigmProps) {
         if (!event.detail || !gesture.current?.moved) select(module.id)
         gesture.current = null
       }}>
-      <i aria-hidden="true" /><span>{module.label}<small ref={(element) => { vectorElements.current[index] = element }} /></span>
+      <i aria-hidden="true" /><span>{module.label}<small aria-hidden="true" ref={(element) => { vectorElements.current[index] = element }} /></span>
     </button>)}
     {active ? <FieldTools active={active} /> : <FieldReading live={interactive} />}
     <nav className="field-arc" aria-label="Magnetic navigation">
@@ -200,5 +202,5 @@ export default function FieldOS({ interactive }: ParadigmProps) {
 function FieldReading({ live }: { live: boolean }) {
   const stress = useOS((state) => state.telemetryState.stressMode, live)
   const latency = useOS((state) => state.telemetryState.liveLatencyMs, live)
-  return <output className="field-response">{stress ? 'Gravitational stress' : 'Field stable'} · {latency.toFixed(1)} ms</output>
+  return <output className="field-response" aria-live="off">{stress ? 'Gravitational stress' : 'Field stable'} · {latency.toFixed(1)} ms</output>
 }

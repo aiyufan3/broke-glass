@@ -4,6 +4,7 @@ import { modules, nodes as specimens, searchNodes, system, tracks } from '../../
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useCommandLine, useOS, useOSActions, useOSSnapshot } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import type { ConsoleLog, OSState } from '../../state/osStore'
 import QuantumTools from './QuantumTools'
 import { COORDINATES, CORE, SURFACE, createCloud, encodeBits, kick, settleCloud, stepCloud } from './cloud'
@@ -104,6 +105,8 @@ export default function QuantumOS({ interactive }: ParadigmProps) {
     strobe.current = 1
   }, [cloud, impulse])
 
+  // Declared before the prompt effect: for the console, the prompt below the workspace takes focus last.
+  useToolFocus(host, active, interactive, { tool: '.quantum-workspace', launchers: '.quantum-coordinate' })
   useEffect(() => {
     if (interactive && active === 'console') prompt.current?.focus({ preventScroll: true })
   }, [active, interactive])
@@ -126,12 +129,12 @@ export default function QuantumOS({ interactive }: ParadigmProps) {
       <span aria-hidden="true">+</span><strong>{system.label}</strong><small>{system.status} / coherent field</small>
     </button>
     {modules.map((module, index) => <button type="button" key={module.id} className="quantum-coordinate" disabled={!interactive}
-      style={{ left: COORDINATES[index].x, top: COORDINATES[index].y }} aria-pressed={active === module.id} tabIndex={active ? -1 : undefined}
+      style={{ left: COORDINATES[index].x, top: COORDINATES[index].y }} aria-label={module.label} aria-pressed={active === module.id} tabIndex={active ? -1 : undefined}
       onPointerEnter={() => observe(index)} onPointerLeave={() => observe(-1)}
-      onFocus={() => observe(index)} onBlur={() => observe(-1)}
+      onFocus={(event) => { if (event.currentTarget.matches(':focus-visible')) observe(index) }} onBlur={() => observe(-1)}
       onClick={() => actions.setActiveModule(module.id)}>
       <span aria-hidden="true">+</span><strong>{module.label}</strong>
-      <QuantumReading index={index} live={interactive} />
+      <QuantumReading index={index} live={interactive} hidden />
     </button>)}
     {active && <QuantumTools active={active} />}
     <form className="quantum-command" onSubmit={(event) => {
@@ -147,7 +150,7 @@ export default function QuantumOS({ interactive }: ParadigmProps) {
   </section>
 }
 
-function QuantumReading({ index, live }: { index: number; live: boolean }) {
+function QuantumReading({ index, live, hidden }: { index: number; live: boolean; hidden?: boolean }) {
   const reading = useOS(({ telemetryState: telemetry, mediaState: media }) => {
     const entropy = telemetry.stressMode ? .33 : .026
     switch (index) {
@@ -157,5 +160,6 @@ function QuantumReading({ index, live }: { index: number; live: boolean }) {
       default: return `f: ${tracks[media.trackIndex].frequency} Hz · ${media.isPlaying ? 'emitting' : 'held'}`
     }
   }, live)
-  return <small>{reading}</small>
+  // Inside a launcher the reading changes every tick, so it stays out of the launcher's accessible name.
+  return <small aria-hidden={hidden || undefined}>{reading}</small>
 }

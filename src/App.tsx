@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import IPhoneFrame, { PHONE_HEIGHT, PHONE_WIDTH } from './components/IPhoneFrame'
 import PhoneViewport from './components/PhoneViewport'
+import { accentText } from './components/accentText'
 import DesignDnaPanel from './components/DesignDnaPanel'
 import NativeViewport from './components/NativeViewport'
 import SpecimenBoundary from './components/SpecimenBoundary'
@@ -35,6 +36,9 @@ export default function App() {
   const focusTitle = useRef<HTMLHeadingElement>(null)
   const plateButtons = useRef<Partial<Record<ParadigmId, HTMLButtonElement | null>>>({})
   const restoreFocus = useRef(false)
+  const nativeExit = useRef<HTMLButtonElement>(null)
+  const nativeOpen = useRef<HTMLButtonElement>(null)
+  const wasFullscreen = useRef(false)
   const moveFocus = useRef(false)
   const focused = selected !== null
   const currentIndex = themes.findIndex((theme) => theme.id === selected)
@@ -70,9 +74,13 @@ export default function App() {
 
   useEffect(() => {
     if (restoreFocus.current && !selected) plateButtons.current[lastTheme.current]?.focus()
-    if (moveFocus.current && selected) focusTitle.current?.focus({ preventScroll: true })
+    // The specimen mounts one commit after the view (its viewport measures itself first) and an open
+    // console prompt focuses itself as it mounts; the title is focused after that, so it keeps the focus.
+    const toTitle = moveFocus.current && selected
+    const frame = toTitle ? requestAnimationFrame(() => focusTitle.current?.focus({ preventScroll: true })) : 0
     restoreFocus.current = false
     moveFocus.current = false
+    return () => cancelAnimationFrame(frame)
   }, [selected])
 
   useEffect(() => {
@@ -107,6 +115,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [selected, activeModule, actions, fullscreen, navigate])
 
+  // Entering or leaving fullscreen replaces the whole tree, so the control that was pressed is gone.
+  // Focus goes to its counterpart, unless the specimen has already taken it (an open console prompt).
+  useEffect(() => {
+    if (fullscreen === wasFullscreen.current) return
+    wasFullscreen.current = fullscreen
+    if (document.activeElement && document.activeElement !== document.body) return
+    ;(fullscreen ? nativeExit : nativeOpen).current?.focus({ preventScroll: true })
+  }, [fullscreen])
+
   useEffect(() => {
     if (!fullscreen) return
     const previous = document.body.style.overflow
@@ -124,7 +141,7 @@ export default function App() {
             {themes.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
           </select>
         </label>
-        <button type="button" aria-label="Exit fullscreen" onClick={() => setFullscreen(false)}><Minimize2 size={14} aria-hidden="true" /><span>Exit</span></button>
+        <button ref={nativeExit} type="button" aria-label="Exit fullscreen" onClick={() => setFullscreen(false)}><Minimize2 size={14} aria-hidden="true" /><span>Exit</span></button>
       </nav>
       <NativeViewport background={base}><SpecimenBoundary key={current.id} name={current.name}><current.Component interactive /></SpecimenBoundary></NativeViewport>
     </main>
@@ -172,7 +189,7 @@ export default function App() {
           <div className="plates-scroll">
             <div className="plates-grid" data-silhouette={silhouette} style={{ '--plate-count': themes.length } as CSSProperties}>
               {themes.map(({ id, accent, name, domain, geometry, polarity, navigation, statusBar, Component }, index) => (
-                <article className="plate" key={id} style={{ '--accent': accent } as CSSProperties}>
+                <article className="plate" key={id} style={{ '--accent': accent, '--accent-text': accentText(accent) } as CSSProperties}>
                   <header className="plate-head"><span>PL. {two(index + 1)}</span><span>{domain}</span></header>
                   <div className="plate-device" inert><PhoneViewport><IPhoneFrame statusBar={statusBar}><SpecimenBoundary name={name}><Component interactive={false} /></SpecimenBoundary></IPhoneFrame></PhoneViewport></div>
                   <div className="plate-caption">
@@ -189,11 +206,11 @@ export default function App() {
             </div>
           </div>
         </section>
-      </main> : <main className="focus page-width mx-auto" style={{ '--accent': current.accent } as CSSProperties}>
+      </main> : <main className="focus page-width mx-auto" style={{ '--accent': current.accent, '--accent-text': accentText(current.accent) } as CSSProperties}>
         <div className="focus-bar flex items-center justify-between">
           <button className="focus-back" type="button" onClick={() => navigate(null)}><ArrowLeft size={15} aria-hidden="true" />All plates</button>
           <p className="focus-plate">PL. {two(currentIndex + 1)} / {two(themes.length)}<span>{current.domain}</span></p>
-          <button className="native-open" type="button" onClick={() => setFullscreen(true)}><Maximize2 size={14} aria-hidden="true" />Native Fullscreen</button>
+          <button ref={nativeOpen} className="native-open" type="button" onClick={() => setFullscreen(true)}><Maximize2 size={14} aria-hidden="true" />Native Fullscreen</button>
         </div>
         <div className="focus-stage">
           <DesignDnaPanel id={current.id} onSwitch={(id) => navigate(id, false)} titleRef={focusTitle} />

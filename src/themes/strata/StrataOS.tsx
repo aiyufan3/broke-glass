@@ -5,10 +5,16 @@ import type { ModuleId } from '../../data/osData'
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import StrataTools, { FORMATIONS } from './StrataTools'
-import { paintStrata } from './renderer'
+import { inkOn } from '../../data/contrast'
+import { bedRock, paintStrata } from './renderer'
 import { CORE_X, SECTION, SPAN_KA, SURFACE, createStrata, deposit, excavation, moduleBed, reading, settleStrata, stepStrata, undeform } from './sediment'
 import './strata.css'
+
+/** `--strata-ink` and `--strata-chalk`: the two inks a formation label is set in. */
+const INK = '#1E1610'
+const CHALK = '#EDE3CF'
 
 // How much sediment each kind of event lands on the surface, and how hard its shear wave shakes the column.
 const load = { boot: 0, command: .55, inspect: .7, scan: .95, spike: 1.3 } as const
@@ -20,7 +26,6 @@ export default function StrataOS({ interactive }: ParadigmProps) {
   const readout = useRef<HTMLOutputElement>(null)
   /** Screen height of the operator's probe, or null when the pointer is outside the section. */
   const probeY = useRef<number | null>(null)
-  const trigger = useRef<HTMLButtonElement | null>(null)
   const written = useRef<Record<string, string>>({})
   const [strata] = useState(createStrata)
   const active = useOS((state) => state.activeModule, interactive)
@@ -33,6 +38,9 @@ export default function StrataOS({ interactive }: ParadigmProps) {
   const [backfilling, setBackfilling] = useState<ModuleId | null>(null)
   const shown = active ?? backfilling
   const shownIndex = shown ? modules.findIndex((module) => module.id === shown) : -1
+  // Each drilling is a new visit: reopening a gallery that is still backfilling mounts its tool afresh.
+  const [entry, setEntry] = useState({ active, visit: 0 })
+  if (entry.active !== active) setEntry({ active, visit: entry.visit + (active ? 1 : 0) })
   useEffect(() => { if (active) setBackfilling(active) }, [active])
 
   function write(key: string, value: string, apply: (value: string) => void) {
@@ -53,7 +61,10 @@ export default function StrataOS({ interactive }: ParadigmProps) {
       const bed = moduleBed(strata.beds, index)
       const centre = (strata.base[bed] + strata.base[bed + 1]) / 2
       const element = launchers.current[index]
-      if (element) write(`bed${index}`, `0 ${centre.toFixed(1)}px`, (value) => { element.style.translate = value })
+      if (!element) return
+      write(`bed${index}`, `0 ${centre.toFixed(1)}px`, (value) => { element.style.translate = value })
+      // The label takes the ink that reads on the rock it is lying on now, as galleries move the beds.
+      write(`ink${index}`, inkOn(bedRock(strata, bed), [INK, CHALK]) === INK ? 'shallow' : 'deep', (value) => { element.dataset.depth = value })
     })
     // The gallery element follows the bed of the tool on show, open or closing, as the model reports it.
     const opened = shownIndex >= 0 ? excavation(strata, moduleBed(strata.beds, shownIndex)) : null
@@ -82,15 +93,11 @@ export default function StrataOS({ interactive }: ParadigmProps) {
     if (load[impulse.kind]) deposit(strata, load[impulse.kind])
   }, [strata, impulse])
 
-  // Backfilling returns focus to the formation that was drilled.
-  useEffect(() => {
-    if (!active) trigger.current?.focus({ preventScroll: true })
-  }, [active])
+  // Drilling moves focus into the gallery; backfilling returns it to the formation that was drilled.
+  useToolFocus(host, active, interactive, { tool: '.strata-gallery', launchers: '.strata-bed' })
 
-  function drill(module: ModuleId, from: HTMLButtonElement) {
-    if (!interactive) return
-    trigger.current = from
-    actions.setActiveModule(module)
+  function drill(module: ModuleId) {
+    if (interactive) actions.setActiveModule(module)
   }
 
   function probe(event: PointerEvent<HTMLElement>) {
@@ -108,9 +115,9 @@ export default function StrataOS({ interactive }: ParadigmProps) {
     <header className="strata-head">
       <p><span>Lab / 06 · Stratigraphic section</span><span>{SPAN_KA} ka · {beds} beds</span></p>
       <h2>Strata<span>OS</span></h2>
-      <output className="strata-readout" ref={readout} />
+      <output className="strata-readout" aria-live="off" ref={readout} />
       <button type="button" className="strata-core" disabled={!interactive} aria-pressed={active === 'console'}
-        onClick={(event) => drill('console', event.currentTarget)}>
+        onClick={() => drill('console')}>
         <span>{system.label}</span><b>{stress ? 'Faulted' : system.status}</b>
       </button>
     </header>
@@ -118,10 +125,10 @@ export default function StrataOS({ interactive }: ParadigmProps) {
       {modules.map((module, index) => <button key={module.id} type="button" className="strata-bed"
         ref={(element) => { launchers.current[index] = element }} disabled={!interactive}
         data-depth={index < 2 ? 'shallow' : 'deep'} aria-label={module.label} aria-pressed={active === module.id}
-        onClick={(event) => drill(module.id, event.currentTarget)}>
+        onClick={() => drill(module.id)}>
         <small>0{index + 1} · {FORMATIONS[index]}</small><strong>{module.label}</strong>
       </button>)}
     </nav>
-    {shown && <StrataTools active={shown} closing={!active} />}
+    {shown && <StrataTools key={`${shown}-${entry.visit}`} active={shown} closing={!active} />}
   </section>
 }

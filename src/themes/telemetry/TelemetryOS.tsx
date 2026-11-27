@@ -3,6 +3,7 @@ import { channels, modules, nodes as specimens, searchNodes, system, tracks } fr
 import type { ParadigmProps } from '../../data/paradigms'
 import { surface, useFrameLoop } from '../../state/frameLoop'
 import { useOS, useOSActions, useOSSnapshot } from '../../state/osStore'
+import { useToolFocus } from '../../state/toolFocus'
 import type { OSState } from '../../state/osStore'
 import { useWallClock } from '../../state/wallClock'
 import TelemetryBay from './TelemetryBay'
@@ -74,6 +75,7 @@ export default function TelemetryOS({ interactive }: ParadigmProps) {
   })
 
   useEffect(invalidate, [invalidate, rate, noise, gain, stress, channel, active])
+  useToolFocus(host, active, interactive, { tool: '.tel-bay', launchers: '.tel-row' })
 
   // The scan area follows the grid as the inspection bay steps open; its canvas is redrawn at each new height.
   useEffect(() => {
@@ -129,7 +131,7 @@ export default function TelemetryOS({ interactive }: ParadigmProps) {
         <canvas ref={(element) => { sparkCanvases.current[index] = element }} aria-hidden="true" />
       </button>)}
     </div>
-    <output className="tel-inspection"><span>Log</span><span>{current ? `0${position} / ${current.label.toUpperCase()} · ${active === 'console' ? latestLog?.output ?? 'BUFFER CLEAR' : 'INSPECTION OPEN'}` : 'Awaiting operator input.'}</span></output>
+    <output className="tel-inspection" aria-live="off"><span>Log</span><span>{current ? `0${position} / ${current.label.toUpperCase()} · ${active === 'console' ? latestLog?.output ?? 'BUFFER CLEAR' : 'INSPECTION OPEN'}` : 'Awaiting operator input.'}</span></output>
     {active ? <TelemetryBay active={active} /> : <div className="tel-command"><span>Cmd</span><button type="button" disabled={!interactive} onClick={() => actions.setActiveModule('console')}>Open instrument console</button></div>}
     <nav className="tel-keystrip" aria-label="Instrument keys">
       {modules.map((module, index) => <button type="button" key={module.id} disabled={!interactive}
