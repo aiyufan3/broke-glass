@@ -26,7 +26,7 @@ async function copyText(value: string) {
   field.style.cssText = 'position:fixed;left:0;top:0;opacity:0;pointer-events:none'
   document.body.append(field)
   field.select()
-  let copied = false
+  let copied: boolean
   try { copied = document.execCommand('copy') } catch { copied = false }
   field.remove()
   if (before instanceof HTMLElement) before.focus({ preventScroll: true })

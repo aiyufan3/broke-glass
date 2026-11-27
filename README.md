@@ -125,7 +125,7 @@ If the new column reads as one of the existing six, it is not a new paradigm.
 1. Add the three controls to `all eighteen engine controls change what their engine draws` (and update the count), and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
 2. Add at least one invariant of the model to `tests/unit/physics.test.ts`. `tests/unit/registry.test.ts` checks the specification itself. Every `src/themes/*/*.ts` model file must keep 90 % line, statement and function coverage and 75 % branch coverage on its own; an engine without tests fails the gate.
 3. Measure your plate with `npm run silhouettes` and commit `scripts/silhouettes.json`: `tests/unit/silhouette.test.ts` fails any two plates nearer than the floor in its header. Add your canvas to `engines` in `tests/settled.spec.mjs` and record it once with `UPDATE_BASELINES=1 npx playwright test tests/settled.spec.mjs`; every settled frame is then compared with `tests/baselines/settled-samples.json`. Re-record an existing engine only for an intended change to its renderer.
-4. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
+4. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the linter, the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
 
 </details>
 
@@ -167,7 +167,8 @@ npm run preview     # serve dist/
 
 ```sh
 npx playwright install chromium
-npm test            # check:boundaries, test:unit, then test:e2e
+npm test            # lint, check:boundaries, test:unit, then test:e2e
+npm run lint        # ESLint: TypeScript and hook rules, and the house style (single quotes, no semicolons, 2-space indent)
 npm run check:boundaries   # dependency-cruiser: paradigm, core and chrome import rules
 npm run test:unit   # Vitest: engine invariants and registry, with model coverage in coverage.local/
 npm run test:e2e    # Playwright: the browser release suite, settled-frame samples and the README checks
@@ -195,7 +196,7 @@ The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The s
 **Deploy**
 
 1. In **Settings → Pages → Build and deployment**, select **GitHub Actions**.
-2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, checks the import boundaries, runs the unit tests with the coverage floor, builds and checks the bundle size budget, installs Chromium, runs the browser release suite twice, on the dev server and on the production bundle (`PLAYWRIGHT_PREVIEW=1`), and then the performance budgets. Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
+2. Push to `main`, or run the **GitHub Pages** workflow. It installs the locked dependencies, then typechecks, lints, checks the import boundaries, runs the unit tests with the coverage floor, builds and checks the bundle size budget, installs Chromium, runs the browser release suite twice, on the dev server and on the production bundle (`PLAYWRIGHT_PREVIEW=1`), and then the performance budgets. Only when every gate passes does it build `dist/` for Pages and deploy it. Pull requests run the gates without deploying.
 3. The workflow passes the Pages URL to the build as `VITE_SITE_URL`, which makes the social image URL absolute and adds `og:url`. For a manual build, set `VITE_SITE_URL=https://<account>.github.io/broke-glass/`.
 
 Assets use a relative base and routes are hashes, so project subpaths and links such as `/#quantum` work without configuration. Fonts ship with the bundle.

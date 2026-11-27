@@ -96,7 +96,7 @@ export function hiddenLoads(source: string) {
   const loads = [...source.matchAll(/import\.meta\.glob\s*(?:<[^>]*>)?\s*\(([^)]*)\)|new\s+URL\s*\(\s*(['"`][^'"`]*['"`])/g)]
   return loads.flatMap((match) => {
     const specifiers = [...(match[1] ?? match[2]).matchAll(/['"`]!?([^'"`]+)['"`]/g)].map((found) => found[1])
-    return specifiers.filter((specifier) => !specifier.startsWith("./"))
+    return specifiers.filter((specifier) => !specifier.startsWith('./'))
   })
 }
 
