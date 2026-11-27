@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/readme-hero-dark.svg">
-    <img src="docs/readme-hero.svg" width="100%" alt="broke-glass. 06 paradigms. Broke as in shattered. Broke as in creatively bankrupt.">
+    <img src="docs/readme-hero.svg" width="100%" alt="broke-glass. 07 paradigms. Broke as in shattered. Broke as in creatively bankrupt.">
   </picture>
 </p>
 
@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="https://aiyufan3.github.io/broke-glass/"><img src="docs/badge-live-demo.svg" height="26" alt="Live demo"></a>
-  <img src="docs/badge-paradigms.svg" height="26" alt="6 paradigms">
+  <img src="docs/badge-paradigms.svg" height="26" alt="7 paradigms">
   <img src="docs/badge-shared-cards.svg" height="26" alt="0 shared cards">
   <a href="LICENSE"><img src="docs/badge-license.svg" height="26" alt="MIT license"></a>
 </p>
@@ -20,10 +20,10 @@ I dropped my glass. Let's move on.
 
 Mobile OS design is broke. It has lived paycheck to paycheck off Frutiger Aero's 2007 homework, and the latest loan is called Liquid Glass. Same gloss, heavier GPU tax. Under it sits a fifteen-year-old grid held together with duct tape, Bento cards and the purple-to-cyan gradient every model reaches for. Slop with rounded corners. That is not bespoke. That is broke.
 
-So this repo keeps one core and throws out the layout. Six mobile operating systems, one session state, zero shared cards. Subjective human taste is the absolute truth here. Never let a machine decide what looks right. A model optimizes for the statistical average, and the average is boring. Tools execute. Taste decides.
+So this repo keeps one core and throws out the layout. Seven mobile operating systems, one session state, zero shared cards. Subjective human taste is the absolute truth here. Never let a machine decide what looks right. A model optimizes for the statistical average, and the average is boring. Tools execute. Taste decides.
 
 <p align="center">
-  <a href="https://aiyufan3.github.io/broke-glass/"><img src="docs/gallery-overview.png" width="100%" alt="The running gallery: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS and StrataOS side by side on one live core."></a>
+  <a href="https://aiyufan3.github.io/broke-glass/"><img src="docs/gallery-overview.png" width="100%" alt="The running gallery: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS, StrataOS and InfinityOS side by side on one live core."></a>
 </p>
 
 ## Specimen sheet
@@ -31,11 +31,11 @@ So this repo keeps one core and throws out the layout. Six mobile operating syst
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/paradigm-silhouettes-dark.svg">
-    <img src="docs/paradigm-silhouettes.svg" width="100%" alt="Silhouette test: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS and StrataOS under a 12px grayscale blur, printed as six halftone plates with their color chips.">
+    <img src="docs/paradigm-silhouettes.svg" width="100%" alt="Silhouette test: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS, StrataOS and InfinityOS under a 12px grayscale blur, printed as seven halftone plates with their color chips.">
   </picture>
 </p>
 
-Six home screens under `grayscale(1) blur(12px)`, measured from the running app and printed as a halftone. Blur it, drain the color, and see if it is still itself. A plate that could be mistaken for its neighbour is a theme. Themes are not accepted.
+Seven home screens under `grayscale(1) blur(12px)`, measured from the running app and printed as a halftone. Blur it, drain the color, and see if it is still itself. A plate that could be mistaken for its neighbour is a theme. Themes are not accepted.
 
 | Paradigm | Design lineage | Spatial geometry | Color polarity | Navigation | Explicitly banned |
 | --- | --- | --- | --- | --- | --- |
@@ -45,17 +45,18 @@ Six home screens under `grayscale(1) blur(12px)`, measured from the running app 
 | **04&nbsp;TelemetryOS** | Teenage Engineering · Dieter Rams · SEM instrumentation | Edge-to-edge hairline grid, ridged scan, tabular traces | Alabaster paper, carbon ink, thermal orange and blue | Select a row or key, inspect, close the bay | Dark Bento · Floating dock |
 | **05&nbsp;SpatialOS** | James Turrell · Tadao Ando · Monument Valley | One-point corridor, four recessed apertures, inner chambers | Petrol concrete, aqua light, amber under load | Tilt, enter through an aperture, exit along Z | Flat stacks · Opaque metal plates |
 | **06&nbsp;StrataOS** | Robert Smithson · Hiroshi Sugimoto · stratigraphic core logs | Full-width sediment beds, one drilled core, fold and fault traces | Sand above, umber below, one oxide-red core | Drill to a formation, excavate it, backfill to the surface | Floating panels · Radial menus |
+| **07&nbsp;InfinityOS** | Yayoi Kusama · Infinity Mirror Rooms · surrealist accumulation | Perspective dot floor to one vanishing point, four floating dotted orbs | Infinity white, saturated multi-hue dots, one black horizon | Touch an orb, be swallowed by it, step back out to the field | Bare undecorated surfaces · Rectangular cards · A second horizon |
 
 ## System architecture
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
-    <img src="docs/architecture.svg" width="100%" alt="One live core, src/state/osStore.tsx with src/data, feeds six engines: potential.ts, tissue.ts, cloud.ts, signal.ts, camera.ts and sediment.ts. A seventh slot is open.">
+    <img src="docs/architecture.svg" width="100%" alt="One live core, src/state/osStore.tsx with src/data, feeds seven engines: potential.ts, tissue.ts, cloud.ts, signal.ts, camera.ts, sediment.ts and dots.ts. An eighth slot is open.">
   </picture>
 </p>
 
-One store, six engines, nothing in between. A paradigm imports `src/state`, `src/data` and its own folder. There is no shared card, modal, dock or grid, so there is nothing to converge on. Each engine is a physical model stepped by pure functions and drawn to a canvas. StrataOS, plate 06, was contributed through the contract below without touching the chrome. Slot 07 is open.
+One store, seven engines, nothing in between. A paradigm imports `src/state`, `src/data` and its own folder. There is no shared card, modal, dock or grid, so there is nothing to converge on. Each engine is a physical model stepped by pure functions and drawn to a canvas. StrataOS, plate 06, and InfinityOS, plate 07, were contributed through the contract below without touching the chrome. Slot 08 is open.
 
 ## Lab controls
 
@@ -63,15 +64,15 @@ The lab inside is called Next-Era Y3K. Open it and pick a plate.
 
 | Control | What it does |
 | --- | --- |
-| **Cross-paradigm sync** | Console, Telemetry, Neural Search and Media exist in all six, each in its own geometry. Run `spike` in one console, switch paradigm, and the same timestamped event is in the log while that engine takes the load. Also: `help` `status` `scan` `clear`. |
+| **Cross-paradigm sync** | Console, Telemetry, Neural Search and Media exist in all seven, each in its own geometry. Run `spike` in one console, switch paradigm, and the same timestamped event is in the log while that engine takes the load. Also: `help` `status` `scan` `clear`. |
 | **Design DNA** | Three live sliders per paradigm. Each one changes what the engine draws. The release suite fails if one stops. Settings survive a reload. |
 | **Copy Paradigm Prompt** | Copies the paradigm's grammar, palette and current slider values as a prompt. |
 | **Native fullscreen** | Edge to edge, uniformly scaled, desktop and phone. On a phone the gallery puts it one tap away. |
-| **Silhouette test** | A switch in the gallery. Applies the blur to all six plates at once. |
-| **Keys** | <kbd>1</kbd>–<kbd>6</kbd> switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the gallery |
+| **Silhouette test** | A switch in the gallery. Applies the blur to all seven plates at once. |
+| **Keys** | <kbd>1</kbd>–<kbd>7</kbd> switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the gallery |
 
 <details>
-<summary><strong>Contribute Paradigm #07</strong></summary>
+<summary><strong>Contribute Paradigm #08</strong></summary>
 
 <br>
 
@@ -111,18 +112,18 @@ src/themes/index.ts       one line in `surfaces`
 
 **The silhouette rule**
 
-Under `grayscale(1) blur(12px)` the home screen must be identifiable by its distribution of mass alone, beside the other six. Turn on **Silhouette test** in the gallery, then print the plate:
+Under `grayscale(1) blur(12px)` the home screen must be identifiable by its distribution of mass alone, beside the other seven. Turn on **Silhouette test** in the gallery, then print the plate:
 
 ```sh
 npm run silhouettes   # measure every registered plate from the running app
 npm run posters       # redraw the specimen sheet, the diagram and the posters
 ```
 
-If the new column reads as one of the existing six, it is not a new paradigm.
+If the new column reads as one of the existing seven, it is not a new paradigm.
 
 **Gates**
 
-1. Add the three controls to `all eighteen engine controls change what their engine draws` (and update the count), and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
+1. Add the three controls to `all twenty-one engine controls change what their engine draws` (and update the count), and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
 2. Add at least one invariant of the model to `tests/unit/physics.test.ts`. `tests/unit/registry.test.ts` checks the specification itself. Every `src/themes/*/*.ts` model file must keep 90 % line, statement and function coverage and 75 % branch coverage on its own; an engine without tests fails the gate.
 3. Measure your plate with `npm run silhouettes` and commit `scripts/silhouettes.json`: `tests/unit/silhouette.test.ts` fails any two plates nearer than the floor in its header. Add your canvas to `engines` in `tests/settled.spec.mjs` and record it once with `UPDATE_BASELINES=1 npx playwright test tests/settled.spec.mjs`; every settled frame is then compared with `tests/baselines/settled-samples.json`. Re-record an existing engine only for an intended change to its renderer.
 4. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the linter, the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
@@ -142,8 +143,9 @@ If the new column reads as one of the existing six, it is not a new paradigm.
 | TelemetryOS | A relief function of position, depth and pass number. The beam re-acquires the specimen on every pass. The oscilloscope plots the selected depth line and a peak finder tracks its maximum. | `telemetry/signal.ts` | Switch channel. Scan band, trace, peak marker and SEM number follow. |
 | SpatialOS | A camera that reproduces the CSS transform order, so the canvas corridor and the DOM slabs share one projection. A dive aligns the camera with an aperture, then pushes through it into a lit room. | `spatial/camera.ts` | Select an aperture. The camera goes through it. |
 | StrataOS | Bed boundaries laid down by deposition, thinned by compaction and bent by a fold. Every deformation is a map of depth onto depth with slope below one, so no horizon can cross another. Excavating a formation lifts the overburden and presses the beds below toward bedrock with one shared time constant. | `strata/sediment.ts` | Run `spike`. The block beyond the fault drops and the column keeps trembling. |
+| InfinityOS | A pinhole camera over a floor of dots in rows to one vanishing point; every radius falls strictly with depth. Proliferation caps the dots and sets the lattice spacing, Infinity Depth how far the rows reach toward the horizon, and Obliteration grows each dot toward its neighbours until they merge. Four Fibonacci-lattice spheres turn above it; a selected one swells around the eye into a room skinned in its own hue. | `infinity/dots.ts` | Run `spike` inside an orb. New dots land around it and stay. |
 
-All six draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Design DNA settings are saved to `localStorage` under a versioned key (`src/state/persist.ts`) and restored on reload; a value that fails validation falls back to its default. Logs, tools, telemetry and media live in memory until reload, and gallery plates always show the defaults.
+All seven draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Design DNA settings are saved to `localStorage` under a versioned key (`src/state/persist.ts`) and restored on reload; a value that fails validation falls back to its default. Logs, tools, telemetry and media live in memory until reload, and gallery plates always show the defaults.
 
 </details>
 
@@ -188,7 +190,7 @@ Every graphic on this page is generated. Nothing is drawn by hand and nothing is
 npm run silhouettes   # scripts/silhouettes.json: luminance of each plate under the blur
 npm run posters       # docs/*.svg and public/og-preview.svg, light and dark
 npm run og            # posters, then public/og-preview.png rasterized from the SVG
-npm run screens -- <dir>   # 2× PNGs: gallery, six focus views, mobile, each paradigm at rest and under load
+npm run screens -- <dir>   # 2× PNGs: gallery, seven focus views, mobile, each paradigm at rest and under load
 ```
 
 The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The social tags point at the PNG. Crawlers do not render SVG.

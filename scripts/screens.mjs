@@ -71,6 +71,14 @@ const focus = {
     await hoverAt(page, '.focus-device .strata-os', .55, .6)
     await page.waitForTimeout(900)
   },
+  infinity: async (page) => {
+    // Seed a burst from inside the console orb, then step out: the new dots stay on the floor.
+    await page.locator('.infinity-orb').nth(0).click()
+    await page.waitForTimeout(700)
+    await spike(page)
+    await page.getByRole('button', { name: 'Step out' }).click()
+    await page.waitForTimeout(1600)
+  },
 }
 
 const active = {
@@ -109,6 +117,12 @@ const active = {
     await page.waitForTimeout(900)
     await page.getByRole('button', { name: /Stress mode/ }).click()
     await page.waitForTimeout(1200)
+  },
+  infinity: async (page) => {
+    await page.locator('.infinity-orb').nth(1).click()
+    await page.waitForTimeout(1200)
+    await page.getByRole('button', { name: /Stress mode/ }).click()
+    await page.waitForTimeout(900)
   },
 }
 

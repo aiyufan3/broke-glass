@@ -106,7 +106,7 @@ test('the next open slot is the one after the last registered paradigm', () => {
   const next = String(count + 1).padStart(2, '0')
   expect(readme.match(/Contribute Paradigm #(\d+)/)?.[1], 'Contribute heading').toBe(next)
   expect(readme.match(/Slot (\d+) is open/)?.[1], 'architecture paragraph').toBe(next)
-  expect(number(readme.match(/A (\w+) slot is open/)?.[1] ?? '(none)'), 'architecture diagram alt').toBe(count + 1)
+  expect(number(readme.match(/\bAn? (\w+) slot is open/)?.[1] ?? '(none)'), 'architecture diagram alt').toBe(count + 1)
 })
 
 test('every list of paradigms in the README names the registry in order', () => {

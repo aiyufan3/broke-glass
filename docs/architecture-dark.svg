@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title description">
 <title id="title">System architecture</title>
-<desc id="description">One live core, src/state/osStore.tsx with src/data, feeds 06 engines that share no layout component. Slot 07 is open.</desc>
+<desc id="description">One live core, src/state/osStore.tsx with src/data, feeds 07 engines that share no layout component. Slot 08 is open.</desc>
 <rect x="0" y="0" width="1200" height="280" fill="#0D0D0D" shape-rendering="crispEdges"/>
 <line x1="0" y1="32" x2="1200" y2="32" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
 <text x="40" y="21" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">SYSTEM ARCHITECTURE — DATA PARITY ONLY, ZERO LAYOUT PARITY</text>
@@ -10,8 +10,8 @@
 <text x="40" y="226" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">LIVE CORE</text>
 <text x="40" y="242" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">src/state/osStore.tsx</text>
 <text x="40" y="258" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">src/data/*</text>
-<path d="M168 140H216V64H944" fill="none" stroke="#E10600" stroke-width="2" shape-rendering="crispEdges"/>
-<path d="M944 64H1074V96" fill="none" stroke="#0047FF" stroke-width="2" stroke-dasharray="2 6" shape-rendering="crispEdges"/>
+<path d="M168 140H216V64H962.6" fill="none" stroke="#E10600" stroke-width="2" shape-rendering="crispEdges"/>
+<path d="M962.6 64H1074V96" fill="none" stroke="#0047FF" stroke-width="2" stroke-dasharray="2 6" shape-rendering="crispEdges"/>
 <text x="232" y="52" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">SESSION STATE · 4 TOOLS · IMPULSE CHANNEL · 48-SAMPLE LATENCY TRACE</text>
 <line x1="294" y1="64" x2="294" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
 <rect x="290" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
@@ -19,42 +19,48 @@
 <text x="262" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">01</text>
 <text x="250" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">FIELD</text>
 <text x="250" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">potential.ts</text>
-<line x1="424" y1="64" x2="424" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<rect x="420" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
-<rect x="380" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="392" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">02</text>
-<text x="380" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">WETWARE</text>
-<text x="380" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">tissue.ts</text>
-<line x1="554" y1="64" x2="554" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<rect x="550" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
-<rect x="510" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="522" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">03</text>
-<text x="510" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">QUANTUM</text>
-<text x="510" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">cloud.ts</text>
-<line x1="684" y1="64" x2="684" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<rect x="680" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
-<rect x="640" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="652" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">04</text>
-<text x="640" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">TELEMETRY</text>
-<text x="640" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">signal.ts</text>
-<line x1="814" y1="64" x2="814" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<rect x="810" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
-<rect x="770" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="782" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">05</text>
-<text x="770" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">SPATIAL</text>
-<text x="770" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">camera.ts</text>
-<line x1="944" y1="64" x2="944" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<rect x="940" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
-<rect x="900" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="912" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">06</text>
-<text x="900" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">STRATA</text>
-<text x="900" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">sediment.ts</text>
+<line x1="405.42857142857144" y1="64" x2="405.42857142857144" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="401.42857142857144" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="361.42857142857144" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="373.42857142857144" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">02</text>
+<text x="361.42857142857144" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">WETWARE</text>
+<text x="361.42857142857144" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">tissue.ts</text>
+<line x1="516.8571428571429" y1="64" x2="516.8571428571429" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="512.8571428571429" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="472.8571428571429" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="484.8571428571429" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">03</text>
+<text x="472.8571428571429" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">QUANTUM</text>
+<text x="472.8571428571429" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">cloud.ts</text>
+<line x1="628.2857142857142" y1="64" x2="628.2857142857142" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="624.2857142857142" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="584.2857142857142" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="596.2857142857142" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">04</text>
+<text x="584.2857142857142" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">TELEMETRY</text>
+<text x="584.2857142857142" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">signal.ts</text>
+<line x1="739.7142857142858" y1="64" x2="739.7142857142858" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="735.7142857142858" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="695.7142857142858" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="707.7142857142858" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">05</text>
+<text x="695.7142857142858" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">SPATIAL</text>
+<text x="695.7142857142858" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">camera.ts</text>
+<line x1="851.1428571428571" y1="64" x2="851.1428571428571" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="847.1428571428571" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="807.1428571428571" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="819.1428571428571" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">06</text>
+<text x="807.1428571428571" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">STRATA</text>
+<text x="807.1428571428571" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">sediment.ts</text>
+<line x1="962.5714285714286" y1="64" x2="962.5714285714286" y2="96" stroke="#E10600" stroke-width="2" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<rect x="958.5714285714286" y="60" width="8" height="8" fill="#E10600" shape-rendering="crispEdges"/>
+<rect x="918.5714285714286" y="96" width="88" height="88" fill="none" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="930.5714285714286" y="166" fill="#F2F0E8" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">07</text>
+<text x="918.5714285714286" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">INFINITY</text>
+<text x="918.5714285714286" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">dots.ts</text>
 <rect x="1030" y="96" width="88" height="88" fill="none" stroke="#0047FF" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges" stroke-dasharray="2 6"/>
-<text x="1042" y="166" fill="#0047FF" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">07</text>
+<text x="1042" y="166" fill="#0047FF" font-family="'Helvetica Neue', Helvetica, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-1.3" textLength="47.6" lengthAdjust="spacingAndGlyphs">08</text>
 <text x="1030" y="204" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">OPEN SLOT</text>
 <text x="1030" y="220" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" letter-spacing="1">src/themes/&lt;id&gt;/</text>
-<line x1="250" y1="246" x2="988" y2="246" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<line x1="250" y1="246" x2="1006.5714285714286" y2="246" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
 <line x1="250" y1="240" x2="250" y2="246" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<line x1="988" y1="240" x2="988" y2="246" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
-<text x="250" y="266" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">06 ZERO-PARITY ENGINES — NO SHARED CARD, MODAL, DOCK OR GRID</text>
+<line x1="1006.5714285714286" y1="240" x2="1006.5714285714286" y2="246" stroke="#F2F0E8" stroke-width="1" vector-effect="non-scaling-stroke" shape-rendering="crispEdges"/>
+<text x="250" y="266" fill="#F2F0E8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12.5" font-weight="700" letter-spacing="1.1">07 ZERO-PARITY ENGINES — NO SHARED CARD, MODAL, DOCK OR GRID</text>
 </svg>

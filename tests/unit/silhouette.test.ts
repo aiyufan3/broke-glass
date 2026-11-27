@@ -12,7 +12,7 @@ import { paradigmIds } from '../../src/data/paradigms'
  *
  * 0 means the same silhouette; 1 means one plate is white wherever the other is black.
  *
- * Measured on the six plates in scripts/silhouettes.json (2026-11-27):
+ * Measured on the six plates in scripts/silhouettes.json (2026-11-27), which set the floor:
  *
  *              field   wetware quantum telemetry spatial strata
  *   field      —       0.0704  0.0618  0.7121    0.1683  0.4451
@@ -26,6 +26,13 @@ import { paradigmIds } from '../../src/data/paradigms'
  * blur still tells apart. The floor is 0.7 of that minimum, rounded down: 0.043. A new plate
  * that lands nearer than 0.043 to any registered plate reads as a theme of it. The floor is not
  * lowered to admit a new paradigm; the paradigm changes instead.
+ *
+ * Re-measured with InfinityOS as plate 07 (2026-11-27). Seven columns make each plate narrower in
+ * the gallery, which moves the existing pairs by at most 0.0055; FieldOS / QuantumOS is still the
+ * closest pair, at 0.0616.
+ *
+ *              field   wetware quantum telemetry spatial strata  infinity
+ *   infinity   0.7888  0.7258  0.8446  0.1244    0.6212  0.3523  —
  */
 export const SILHOUETTE_FLOOR = 0.043
 
