@@ -14,6 +14,12 @@ import {
   excavation, gallery, moduleBed, reading, restBoundaries, settleStrata, stepStrata, undeform, veneerThickness,
 } from '../../src/themes/strata/sediment'
 import type { Strata, StrataInputs } from '../../src/themes/strata/sediment'
+import {
+  EYE, FOCAL, HORIZON, HUES, LATTICE, MAX_DOTS, MAX_ROWS, MIN_DOTS, MIN_ROWS, NEAR, ORBS, ROOM, SEED_SHARE, SURFACE as DOT_SURFACE, VANISH,
+  burst, burstDots, coverage, createDots, dotCount, latticeCount, layoutFloor, orbDots, orbView, project as projectFloor, pulseGains, rowDepth,
+  settleDots, spacingFor, stepDots,
+} from '../../src/themes/infinity/dots'
+import type { DotField, InfinityInputs } from '../../src/themes/infinity/dots'
 import { CORE, NUCLEUS, PULSE_HOLD_MS, bezierPoint, bezierTangent, createTissue, firePulse, settleTissue, stepTissue, vesselCurve } from '../../src/themes/wetware/tissue'
 
 const FRAME = 1 / 60
@@ -615,6 +621,272 @@ describe('StrataOS · sediment', () => {
     for (const y of strata.grainY) {
       expect(y).toBeGreaterThanOrEqual(40)
       expect(y).toBeLessThanOrEqual(SECTION.top)
+    }
+  })
+})
+
+describe('InfinityOS · dots', () => {
+  const rest: InfinityInputs = { proliferation: 900, obliteration: .35, rows: 12, stress: false, selected: -1 }
+  const settled = (inputs: Partial<InfinityInputs> = {}, seed?: number) => {
+    const field = createDots(seed)
+    settleDots(field, { ...rest, ...inputs })
+    return field
+  }
+  const run = (field: DotField, inputs: InfinityInputs, seconds: number) => {
+    for (let step = 0; step < steps(seconds); step++) stepDots(field, inputs, FRAME)
+  }
+  const snapshot = (field: DotField) => ({
+    floor: [...field.floor.x, ...field.floor.y, ...field.floor.rx, ...field.floor.ry, ...field.floor.hue],
+    bursts: field.bursts.map((dot) => ({ ...dot })),
+    turn: field.turn, swell: [...field.swell], load: field.load, pulse: field.pulse, coverage: field.coverage,
+  })
+
+  test('the same seed and the same commands reproduce the field exactly; another seed scatters bursts elsewhere', () => {
+    const play = (seed: number) => {
+      const field = createDots(seed)
+      settleDots(field, rest)
+      burst(field, 1)
+      run(field, { ...rest, selected: 2, stress: true }, .4)
+      burst(field, 1.3)
+      settleDots(field, { ...rest, selected: 2 })
+      return field
+    }
+    expect(snapshot(play(11))).toEqual(snapshot(play(11)))
+    expect(snapshot(play(11)).bursts).not.toEqual(snapshot(play(12)).bursts)
+    // The lattice itself does not depend on the seed: it is the floor, not a scatter.
+    expect(snapshot(settled({}, 1)).floor).toEqual(snapshot(settled({}, 2)).floor)
+  })
+
+  test('every dot shrinks strictly with depth and every row sits below the one horizon, centred on the vanishing point', () => {
+    for (const proliferation of [MIN_DOTS, 900, MAX_DOTS]) {
+      for (const obliteration of [0, .35, 1]) {
+        for (const rows of [MIN_ROWS, 12, MAX_ROWS]) {
+          const { floor } = settled({ proliferation, obliteration, rows })
+          expect(floor.rows).toBe(rows)
+          let previous = { rx: Infinity, ry: Infinity, y: Infinity }
+          for (let row = 0; row < rows; row++) {
+            const from = floor.rowStart[row]
+            const to = floor.rowStart[row + 1]
+            expect(to - from).toBeGreaterThan(0)
+            expect(to - from).toBe(2 * Math.floor((to - from) / 2) + 1)
+            expect(floor.rx[from]).toBeLessThan(previous.rx)
+            expect(floor.ry[from]).toBeLessThan(previous.ry)
+            expect(floor.y[from]).toBeLessThan(previous.y)
+            expect(floor.y[from]).toBeGreaterThan(HORIZON)
+            // Symmetric about the vanishing point: column -j mirrors column j.
+            for (let i = from; i < to; i++) expect(floor.x[i] + floor.x[to - 1 - (i - from)]).toBeCloseTo(2 * VANISH.x, 3)
+            previous = { rx: floor.rx[from], ry: floor.ry[from], y: floor.y[from] }
+          }
+        }
+      }
+    }
+    // Projection: the nearest row stands on the bottom edge and depth runs to the horizon.
+    expect(projectFloor(0, NEAR).y).toBeCloseTo(DOT_SURFACE.height - 12, 6)
+    expect(projectFloor(0, 1e9).y).toBeCloseTo(HORIZON, 4)
+    expect(projectFloor(1, 2, EYE)).toEqual({ x: VANISH.x + FOCAL / 2, y: HORIZON })
+    expect(rowDepth(MAX_ROWS - 1)).toBeGreaterThan(rowDepth(MIN_ROWS - 1) * 100)
+  })
+
+  test('Obliteration coverage rises monotonically and never leaves [0, 1]; at 100 neighbours merge', () => {
+    let previous = -1
+    for (let step = -20; step <= 120; step++) {
+      const value = coverage(step / 100)
+      expect(value).toBeGreaterThanOrEqual(0)
+      expect(value).toBeLessThanOrEqual(1)
+      if (step > 0 && step <= 100) expect(value).toBeGreaterThan(previous)
+      else expect(value).toBeGreaterThanOrEqual(previous)
+      previous = value
+    }
+    expect(coverage(-5)).toBe(coverage(0))
+    expect(coverage(5)).toBe(1)
+    // At full Obliteration a dot reaches past half the gap to its neighbour on either side: the row is solid.
+    const { floor } = settled({ obliteration: 1 })
+    for (let row = 0; row < floor.rows; row++) {
+      const i = floor.rowStart[row]
+      if (floor.rowStart[row + 1] - i < 2) continue
+      expect(floor.rx[i] * 2).toBeGreaterThan(floor.x[i + 1] - floor.x[i])
+    }
+    // And coverage is what the floor draws with: more Obliteration, larger dots on the same lattice.
+    const bare = settled({ obliteration: 0 }).floor
+    const full = settled({ obliteration: 1 }).floor
+    expect(full.count).toBe(bare.count)
+    expect(full.rx[0]).toBeGreaterThan(bare.rx[0] * 3)
+  })
+
+  test('Proliferation caps every dot on the floor, lattice and bursts together, and commands accumulate up to it', () => {
+    for (const proliferation of [MIN_DOTS, 900, MAX_DOTS]) {
+      for (const rows of [MIN_ROWS, MAX_ROWS]) {
+        const field = settled({ proliferation, rows })
+        expect(field.floor.count).toBeLessThanOrEqual(Math.round(proliferation * SEED_SHARE))
+        let total = dotCount(field)
+        for (let command = 0; command < 60; command++) {
+          burst(field, 1.3)
+          expect(dotCount(field)).toBeGreaterThanOrEqual(total)
+          expect(dotCount(field)).toBeLessThanOrEqual(proliferation)
+          total = dotCount(field)
+        }
+        expect(total).toBe(proliferation)
+        // At the cap a command still lands: its dots take the place of the oldest burst dots.
+        const oldest = field.bursts[0]
+        const newest = field.bursts.at(-1)
+        expect(burst(field, 1)).toBe(60)
+        expect(dotCount(field)).toBe(proliferation)
+        expect(field.bursts).not.toContain(oldest)
+        expect(field.bursts).toContain(newest)
+        expect(field.bursts.slice(-60).every((dot) => dot.age === 0)).toBe(true)
+      }
+    }
+    // Lowering the cap sheds the oldest bursts and keeps the newest.
+    const field = settled({ proliferation: 2000 })
+    for (let command = 0; command < 10; command++) burst(field, 1)
+    const newest = field.bursts.at(-1)
+    settleDots(field, { ...rest, proliferation: 500 })
+    expect(dotCount(field)).toBeLessThanOrEqual(500)
+    expect(field.bursts.at(-1)).toBe(newest)
+    // Out-of-range settings are held to the control ranges.
+    const wild = settled({ proliferation: 99999, rows: 2.6, obliteration: 7 })
+    expect([wild.proliferation, wild.rows, wild.obliteration]).toEqual([MAX_DOTS, MIN_ROWS, 1])
+  })
+
+  test('Proliferation sets the spacing and Infinity Depth only how far the rows reach toward the horizon', () => {
+    for (const target of [24, 124, 558, 1488]) {
+      const spacing = spacingFor(target, MAX_ROWS)
+      expect(latticeCount(spacing, MAX_ROWS)).toBeLessThanOrEqual(target)
+      expect(latticeCount(spacing * .97, MAX_ROWS)).toBeGreaterThan(latticeCount(spacing, MAX_ROWS))
+    }
+    const sparse = settled({ proliferation: MIN_DOTS }).floor
+    const dense = settled({ proliferation: MAX_DOTS }).floor
+    expect(dense.count).toBeGreaterThan(sparse.count * 5)
+    expect(dense.rx[0]).toBeLessThan(sparse.rx[0])
+    const shallow = settled({ rows: MIN_ROWS }).floor
+    const deep = settled({ rows: MAX_ROWS }).floor
+    expect(deep.spacing).toBe(shallow.spacing)
+    expect(deep.rx[0]).toBe(shallow.rx[0])
+    expect(deep.y[deep.rowStart[MAX_ROWS - 1]]).toBeLessThan(HORIZON + 2)
+    expect(shallow.y[shallow.rowStart[MIN_ROWS - 1]]).toBeGreaterThan(HORIZON + 150)
+    // A tinted lattice keeps its geometry and takes one hue.
+    const tinted = layoutFloor(558, 12, .5, 3)
+    expect([...new Set(tinted.hue)]).toEqual([3])
+    expect([...new Set(settled().floor.hue)].sort()).toEqual([0, 1, 2, 3, 4])
+    expect(HUES).toHaveLength(5)
+  })
+
+  test('the settled frame is a fixed point of the inputs, whatever ran before it', () => {
+    const fresh = snapshot(settled({ selected: 1, stress: true }))
+    const used = createDots()
+    settleDots(used, rest)
+    run(used, { ...rest, selected: 3, stress: false }, .7)
+    run(used, { ...rest, selected: 1, stress: true }, .2)
+    settleDots(used, { ...rest, selected: 1, stress: true })
+    expect(snapshot(used)).toEqual(fresh)
+    settleDots(used, { ...rest, selected: 1, stress: true })
+    expect(snapshot(used)).toEqual(fresh)
+  })
+
+  test('a selected orb swells smoothly into the room and shrinks back out of it', () => {
+    const field = settled()
+    const home = orbView(field, 2)
+    const swell: number[] = []
+    // One shared time constant of .22 s: within 1e-4 of the target, and snapped to it, after about two seconds.
+    for (let step = 0; step < steps(2.5); step++) {
+      stepDots(field, { ...rest, selected: 2 }, FRAME)
+      swell.push(field.swell[2])
+    }
+    swell.slice(1).forEach((value, step) => expect(value).toBeGreaterThanOrEqual(swell[step]))
+    expect(field.swell[2]).toBe(1)
+    expect(field.swell.filter((_, index) => index !== 2)).toEqual([0, 0, 0])
+    const room = orbView(field, 2)
+    expect([room.x, room.y]).toEqual([ROOM.x, ROOM.y])
+    expect(room.radius).toBeGreaterThan(Math.hypot(DOT_SURFACE.width, DOT_SURFACE.height) / 2 + 20)
+    expect(room.depth).toBeLessThan(Math.min(...ORBS.map((orb) => orb.z)))
+    run(field, rest, 2.5)
+    expect(field.swell[2]).toBe(0)
+    expect(orbView(field, 2)).toEqual(home)
+    // Orbs float at staggered depths, nearer ones larger for their size.
+    expect(new Set(ORBS.map((orb) => orb.z)).size).toBe(4)
+    for (const [index, orb] of ORBS.entries()) expect(orbView(settled(), index).radius).toBeCloseTo(FOCAL * orb.radius / orb.z, 6)
+  })
+
+  test('each orb shows the near half of its Fibonacci lattice, back to front, and turns while the field runs', () => {
+    expect(LATTICE).toHaveLength(140)
+    for (const point of LATTICE) expect(Math.hypot(point.x, point.y, point.z)).toBeCloseTo(1, 9)
+    const field = settled()
+    for (const index of ORBS.keys()) {
+      const view = orbView(field, index)
+      const dots = orbDots(field, index)
+      expect(dots.length).toBeGreaterThan(55)
+      expect(dots.length).toBeLessThan(85)
+      dots.slice(1).forEach((dot, i) => expect(dot.facing).toBeGreaterThanOrEqual(dots[i].facing))
+      for (const dot of dots) {
+        expect(Math.hypot(dot.x - view.x, dot.y - view.y)).toBeLessThanOrEqual(view.radius + 1e-6)
+        expect(dot.across).toBeLessThanOrEqual(dot.along)
+        expect(dot.facing).toBeGreaterThan(0)
+      }
+    }
+    const before = orbDots(field, 0)
+    run(field, rest, .5)
+    expect(field.turn).toBeGreaterThan(0)
+    expect(orbDots(field, 0)).not.toEqual(before)
+    settleDots(field, rest)
+    expect(orbDots(field, 0)).toEqual(before)
+  })
+
+  test('a burst lands around the point of action and grows from nothing', () => {
+    const field = settled({ proliferation: MAX_DOTS, selected: 3 })
+    expect(burst(field, 1)).toBe(60)
+    for (const dot of field.bursts) {
+      expect(dot.z).toBeGreaterThanOrEqual(NEAR)
+      expect(Math.abs(dot.x - ORBS[3].x)).toBeLessThan(1)
+    }
+    expect(burstDots(field).every((dot) => dot.rx === 0)).toBe(true)
+    run(field, { ...rest, proliferation: MAX_DOTS, selected: 3 }, .6)
+    const landed = burstDots(field)
+    expect(landed.every((dot) => dot.rx > 0 && dot.ry > 0)).toBe(true)
+    for (const dot of landed) expect(dot.y).toBeGreaterThan(HORIZON)
+    // With no orb open, commands land in front of the vanishing point.
+    const open = settled({ proliferation: MAX_DOTS })
+    burst(open, .5)
+    for (const dot of open.bursts) expect(Math.abs(dot.x)).toBeLessThan(1)
+  })
+
+  test('under load a pulse runs outward from the horizon and dies away when the load lifts', () => {
+    const peakOf = (field: DotField) => {
+      const gains = pulseGains(field)
+      return gains.indexOf(Math.max(...gains))
+    }
+    const field = settled({ rows: MAX_ROWS, stress: true })
+    expect(field.load).toBe(1)
+    const gains = pulseGains(field)
+    expect(Math.max(...gains)).toBeGreaterThan(1.2)
+    const peak = peakOf(field)
+    expect(Math.abs((field.rows - 1 - peak) / (field.rows - 1) - .5)).toBeLessThan(.15)
+    // The pulse travels toward the eye: a moment later the peak is on a nearer row.
+    run(field, { ...rest, rows: MAX_ROWS, stress: true }, .2)
+    expect(peakOf(field)).toBeLessThan(peak)
+    run(field, { ...rest, rows: MAX_ROWS }, .5)
+    expect(field.load).toBe(0)
+    expect(pulseGains(field).every((gain) => gain === 1)).toBe(true)
+  })
+
+  test('the pulse never lets a farther row draw as large as a nearer one', () => {
+    for (const rows of [MIN_ROWS, 12, MAX_ROWS]) {
+      for (const obliteration of [0, .35, 1]) {
+        const field = settled({ rows, obliteration, stress: true })
+        let swelled = 0
+        for (let step = 0; step < steps(1.5); step++) {
+          stepDots(field, { ...rest, rows, obliteration, stress: true }, FRAME)
+          const gains = pulseGains(field)
+          swelled = Math.max(swelled, ...gains)
+          const { floor } = field
+          for (let row = 1; row < rows; row++) {
+            const near = floor.rowStart[row - 1]
+            const far = floor.rowStart[row]
+            expect(floor.rx[far] * gains[row]).toBeLessThan(floor.rx[near] * gains[row - 1])
+            expect(floor.ry[far] * gains[row]).toBeLessThan(floor.ry[near] * gains[row - 1])
+          }
+        }
+        expect(swelled).toBeGreaterThan(1.2)
+      }
     }
   })
 })

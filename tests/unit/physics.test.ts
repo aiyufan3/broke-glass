@@ -8,6 +8,7 @@ import { createTissue, membranePoint, stepTissue, vesselCurve } from '../../src/
 import type { Cell, Vec } from '../../src/themes/wetware/tissue'
 import { MAX_BEDS, MIN_BEDS, boundaryAt, createStrata, deposit, settleStrata, stepStrata } from '../../src/themes/strata/sediment'
 import type { Strata } from '../../src/themes/strata/sediment'
+import { MAX_DOTS, MAX_ROWS, MIN_DOTS, MIN_ROWS, burst, createDots, dotCount, pulseGains, settleDots, stepDots } from '../../src/themes/infinity/dots'
 
 const FRAME_MS = 1000 / 60
 const rest: FieldInputs = { warp: .58, levels: 30, drift: 0, stress: false, selected: -1 }
@@ -166,4 +167,35 @@ test('no horizon ever crosses another: beds stay in order through folding, fault
     }
   }
   expect(thinnest).toBeGreaterThan(1)
+})
+
+test('every dot the floor draws shrinks with depth and the floor never holds more than Proliferation, whatever the field does', () => {
+  // The controls move between and during runs, so the lattice is laid out again, bursts are shed and the
+  // load pulse sweeps every row while orbs are entered and left.
+  const settings = [
+    [900, .35, 12], [MIN_DOTS, 0, MIN_ROWS], [MAX_DOTS, 1, MAX_ROWS], [1600, .7, 7], [300, .1, 20], [MAX_DOTS, .5, MIN_ROWS],
+  ] as const
+  const field = createDots()
+  settleDots(field, { proliferation: 900, obliteration: .35, rows: 12, stress: true, selected: -1 })
+  let checked = 0
+  for (const [index, [proliferation, obliteration, rows]] of settings.entries()) {
+    for (const selected of [index % 4, -1]) {
+      burst(field, 1.3)
+      for (let step = 0; step < 24; step++) {
+        stepDots(field, { proliferation, obliteration, rows, stress: step % 12 < 9, selected }, FRAME_MS / 1000)
+        const { floor } = field
+        const gains = pulseGains(field)
+        for (let row = 1; row < floor.rows; row++) {
+          const near = floor.rowStart[row - 1]
+          const far = floor.rowStart[row]
+          expect(floor.rx[far] * gains[row]).toBeLessThan(floor.rx[near] * gains[row - 1])
+          expect(floor.ry[far] * gains[row]).toBeLessThan(floor.ry[near] * gains[row - 1])
+          checked++
+        }
+        expect(floor.rows).toBe(rows)
+        expect(dotCount(field)).toBeLessThanOrEqual(proliferation)
+      }
+    }
+  }
+  expect(checked).toBeGreaterThan(3000)
 })

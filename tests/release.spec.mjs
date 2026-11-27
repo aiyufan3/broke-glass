@@ -12,9 +12,9 @@ const test = base.extend({
   },
 })
 
-const names = ['FieldOS', 'WetwareOS', 'QuantumOS', 'TelemetryOS', 'SpatialOS', 'StrataOS']
-const launchers = ['.field-node', '.wet-cell', '.quantum-coordinate', '.tel-row', '.spatial-plane', '.strata-bed']
-const surfaces = ['.field-os', '.wet-os', '.quantum-os', '.telemetry-os', '.spatial-os', '.strata-os']
+const names = ['FieldOS', 'WetwareOS', 'QuantumOS', 'TelemetryOS', 'SpatialOS', 'StrataOS', 'InfinityOS']
+const launchers = ['.field-node', '.wet-cell', '.quantum-coordinate', '.tel-row', '.spatial-plane', '.strata-bed', '.infinity-orb']
+const surfaces = ['.field-os', '.wet-os', '.quantum-os', '.telemetry-os', '.spatial-os', '.strata-os', '.infinity-os']
 const switchTo = (page, i) => page.getByRole('navigation', { name: 'Switch theme' }).getByRole('button', { name: names[i], exact: true }).click()
 const prompt = (page) => page.getByRole('textbox', { name: 'Console command' })
 const log = (page) => page.getByRole('log', { name: 'Console logs' })
@@ -58,7 +58,7 @@ function countPixels(page, selector, kind) {
   }, kind)
 }
 
-test('a timestamped stress event and command editing survive all six native consoles', async ({ page }) => {
+test('a timestamped stress event and command editing survive all seven native consoles', async ({ page }) => {
   await page.goto('./#field')
   await page.locator('.field-node').first().click()
   await expect(prompt(page)).toBeFocused()
@@ -75,7 +75,7 @@ test('a timestamped stress event and command editing survive all six native cons
   await expect(page.locator('.tel-bay h3')).toContainText('Console')
   await expect(log(page).locator('time').first()).toHaveText(stamp)
   await expect.poll(() => page.evaluate(() => document.querySelector('.tel-head time').textContent.startsWith(document.querySelector('.status-bar time').textContent))).toBe(true)
-  for (const i of [4, 0, 1, 2, 5, 3]) {
+  for (const i of [4, 0, 1, 2, 5, 6, 3]) {
     await switchTo(page, i)
     await expect(page.locator(surfaces[i])).toHaveAttribute('data-stress', 'true')
     await expect(log(page)).toContainText('Stress injection active')
@@ -109,7 +109,7 @@ test('search disclosures and inspection actions work in each native geometry', a
     await specimen.click()
     await expect(specimen).toHaveAttribute('aria-expanded', 'true')
     await expect(page.getByText('A living junction that routes packets along branching filaments.', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: /Trace in Console|Send to nucleus|Observe in Console|Log specimen|Inspect in Console|Log to core/ }).click()
+    await page.getByRole('button', { name: /Trace in Console|Send to nucleus|Observe in Console|Log specimen|Inspect in Console|Log to core|Seed in Console/ }).click()
     await expect(log(page)).toContainText('W-116 · Mycelial Relay')
     await expect(prompt(page)).toBeFocused()
     await page.keyboard.press('Escape')
@@ -125,7 +125,7 @@ test('search disclosures and inspection actions work in each native geometry', a
   await expect(page.locator('.quantum-coordinate').last()).toContainText('65 Hz · emitting')
 })
 
-test('all eighteen engine controls change what their engine draws', async ({ page }) => {
+test('all twenty-one engine controls change what their engine draws', async ({ page }) => {
   // Reduced motion freezes every engine on its settled frame, so a changed frame can only come from a control.
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('./#field')
@@ -197,6 +197,17 @@ test('all eighteen engine controls change what their engine draws', async ({ pag
   await expectRedraw(page, '.strata-section', () => drag(page, 'Compaction', 'min'))
   await drag(page, 'Tectonic Fold', 'min')
   await expectRedraw(page, '.strata-section', () => drag(page, 'Tectonic Fold', 'max'))
+
+  await switchTo(page, 6)
+  const readout = page.locator('.infinity-readout')
+  await expectRedraw(page, '.infinity-field', () => drag(page, 'Proliferation', 'max'))
+  const dense = Number((await readout.textContent()).match(/^(\d+) dots/)[1])
+  await expectRedraw(page, '.infinity-field', () => drag(page, 'Proliferation', 'min'))
+  await expect.poll(async () => Number((await readout.textContent()).match(/^(\d+) dots/)[1])).toBeLessThan(dense / 5)
+  await expectRedraw(page, '.infinity-field', () => drag(page, 'Obliteration', 'max'))
+  await expect(readout).toContainText('100% obliterated')
+  await expectRedraw(page, '.infinity-field', () => drag(page, 'Infinity Depth', 'min'))
+  await expect(readout).toContainText('· 4 rows')
 })
 
 test('an excited body repels its neighbour and tethered cells follow the tissue engine', async ({ page }) => {
@@ -237,6 +248,41 @@ test('drilling a formation opens a gallery in its bed and backfill returns to th
   await expect.poll(() => variable('--strata-open')).toBeLessThan(.01)
   await expect(page.locator('.strata-gallery')).toHaveCount(0)
   await expect(launcher).toBeFocused()
+})
+
+test('touching an orb swallows the viewer into its room, commands seed dots there, and stepping out returns to the field', async ({ page }) => {
+  // Reduced motion: every frame is the settled one, so a changed frame can only come from what the command did.
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('./#infinity')
+  const swell = () => page.locator('.infinity-os').evaluate((el) => parseFloat(el.style.getPropertyValue('--infinity-swell')))
+  const dots = async () => Number((await page.locator('.infinity-readout').textContent()).match(/^(\d+) dots/)[1])
+  const orb = page.locator('.infinity-orb').first()
+  await orb.click()
+  await expect.poll(swell).toBe(1)
+  await expect(page.locator('.infinity-room h3')).toHaveText('Console')
+  await expect(prompt(page)).toBeFocused()
+  const before = await dots()
+  // The burst lands on the room's own floor, in the canvas the viewer is inside.
+  await expectRedraw(page, '.infinity-field', () => page.getByRole('button', { name: 'spike', exact: true }).click())
+  await expect.poll(dots).toBeGreaterThan(before)
+  // Under load the pulse runs through the room as well.
+  const calm = await frame(page, '.infinity-field')
+  await prompt(page).fill('open telemetry')
+  await prompt(page).press('Enter')
+  await expect(page.locator('.infinity-room h3')).toHaveText('Telemetry')
+  await expect.poll(() => frame(page, '.infinity-field')).not.toBe(calm)
+  await page.getByRole('button', { name: 'Step out' }).click()
+  await expect.poll(swell).toBe(0)
+  await expect(page.locator('.infinity-room')).toHaveCount(0)
+  await expect(page.locator('.infinity-orb').nth(1)).toBeFocused()
+
+  // Entering again while an orb is still closing puts the viewer back in a live tool.
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await orb.click()
+  await expect.poll(swell).toBeGreaterThan(.99)
+  await page.getByRole('button', { name: 'Step out' }).click()
+  await orb.click()
+  await expect(prompt(page)).toBeFocused()
 })
 
 test('engine settings survive a reload and corrupt storage falls back to the defaults', async ({ page }) => {
@@ -303,7 +349,7 @@ test('the static Pages document exposes a fetchable 1200 × 630 preview before J
   const response = await request.get('./')
   expect(response.ok()).toBe(true)
   const html = await response.text()
-  expect(html).toContain('<title>broke-glass — Six Post-Glass Mobile OS Paradigms</title>')
+  expect(html).toContain('<title>broke-glass — Seven Post-Glass Mobile OS Paradigms</title>')
   for (const key of ['og:type', 'og:title', 'og:description', 'og:image', 'og:image:width', 'og:image:height',
     'twitter:card', 'twitter:title', 'twitter:description', 'twitter:image']) {
     expect(html).toContain(`="${key}"`)

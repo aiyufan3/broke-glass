@@ -8,7 +8,7 @@ import { focus, gallery } from './perf-budgets.mjs'
  * enough to tighten a budget later.
  */
 
-const paradigms = ['field', 'wetware', 'quantum', 'telemetry', 'spatial', 'strata']
+const paradigms = ['field', 'wetware', 'quantum', 'telemetry', 'spatial', 'strata', 'infinity']
 const median = (values) => {
   const sorted = [...values].sort((a, b) => a - b)
   const middle = sorted.length >> 1

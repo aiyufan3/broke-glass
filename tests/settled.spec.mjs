@@ -42,6 +42,7 @@ const engines = {
   telemetry: '.tel-surface',
   spatial: '.spatial-corridor',
   strata: '.strata-section',
+  infinity: '.infinity-field',
 }
 
 test.use({ viewport: { width: 1440, height: 980 }, deviceScaleFactor: 1 })
