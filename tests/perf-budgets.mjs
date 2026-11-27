@@ -18,9 +18,9 @@ export const bundle = {
 }
 
 export const gallery = {
-  /** Window observed after the gallery has loaded and settled. */
+  /** Window observed after the index has loaded. The index draws its plates once, as SVG, and runs no engine. */
   observeMs: 3000,
-  /** No single long task may exceed this while the settled plates sit on screen. Measured: none at all, locally and emulated. */
+  /** No single long task may exceed this while the index sits on screen. Measured: none at all, locally and emulated. */
   longestTaskMs: 200,
   /** Sum of all long-task durations in the window. Measured 0 ms; the budget allows one slow GC or font pass. */
   totalLongTaskMs: 300,

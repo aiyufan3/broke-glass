@@ -109,9 +109,9 @@ function readBaseline() {
 
 const measured = {}
 
-test('every plate in the gallery has a recorded engine', async ({ page }) => {
+test('every plate in the index has a recorded engine', async ({ page }) => {
   await page.goto('./')
-  await expect(page.locator('.plate')).toHaveCount(Object.keys(engines).length)
+  await expect(page.locator('.plate[data-plate]')).toHaveCount(Object.keys(engines).length)
 })
 
 for (const [id, selector] of Object.entries(engines)) {

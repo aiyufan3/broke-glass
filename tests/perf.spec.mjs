@@ -17,10 +17,10 @@ const median = (values) => {
 
 test.use({ viewport: { width: 1440, height: 980 } })
 
-test('the settled gallery stays free of long tasks', async ({ page }) => {
+test('the index stays free of long tasks', async ({ page }) => {
   await page.goto('./')
   await page.evaluate(() => document.fonts.ready)
-  await expect(page.locator('.plate')).toHaveCount(paradigms.length)
+  await expect(page.locator('.plate[data-plate]')).toHaveCount(paradigms.length)
   // Let every plate paint its settled frame before the window opens.
   await page.waitForTimeout(1000)
   const tasks = await page.evaluate((window) => new Promise((resolve) => {
@@ -31,7 +31,7 @@ test('the settled gallery stays free of long tasks', async ({ page }) => {
   }), gallery.observeMs)
   const longest = Math.max(0, ...tasks)
   const total = tasks.reduce((sum, duration) => sum + duration, 0)
-  console.log(`gallery: ${tasks.length} long tasks in ${gallery.observeMs} ms, longest ${longest.toFixed(1)} ms, total ${total.toFixed(1)} ms`)
+  console.log(`index: ${tasks.length} long tasks in ${gallery.observeMs} ms, longest ${longest.toFixed(1)} ms, total ${total.toFixed(1)} ms`)
   expect(longest, 'longest task').toBeLessThanOrEqual(gallery.longestTaskMs)
   expect(total, 'total long-task time').toBeLessThanOrEqual(gallery.totalLongTaskMs)
 })

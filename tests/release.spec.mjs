@@ -16,7 +16,9 @@ const test = base.extend({
 const names = ['FieldOS', 'WetwareOS', 'QuantumOS', 'TelemetryOS', 'SpatialOS', 'StrataOS', 'InfinityOS']
 const launchers = ['.field-node', '.wet-cell', '.quantum-coordinate', '.tel-row', '.spatial-plane', '.strata-bed', '.infinity-orb']
 const surfaces = ['.field-os', '.wet-os', '.quantum-os', '.telemetry-os', '.spatial-os', '.strata-os', '.infinity-os']
-const switchTo = (page, i) => page.getByRole('navigation', { name: 'Switch theme' }).getByRole('button', { name: names[i], exact: true }).click()
+const plateLabel = (i) => `PL. ${String(i + 1).padStart(2, '0')}`
+// The switcher shows plate numbers; each name starts with its number, then the paradigm.
+const switchTo = (page, i) => page.getByRole('navigation', { name: 'Switch theme' }).getByRole('button', { name: `${String(i + 1).padStart(2, '0')} ${names[i]}`, exact: true }).click()
 const prompt = (page) => page.getByRole('textbox', { name: 'Console command' })
 const log = (page) => page.getByRole('log', { name: 'Console logs' })
 const style = (page, selector, property) => page.locator(selector).first().evaluate((el, property) => getComputedStyle(el).getPropertyValue(property), property)
@@ -356,7 +358,7 @@ test('opening a tool moves keyboard focus into it and closing it returns focus t
   // Opening a plate with the console left open focuses the paradigm's title, not the prompt inside it.
   await page.locator(launchers[5]).first().click()
   await page.getByRole('button', { name: 'All plates' }).click()
-  await page.getByRole('button', { name: 'Open StrataOS in focus mode' }).press('Enter')
+  await page.getByRole('button', { name: 'PL. 06 StrataOS, open in focus mode' }).press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'StrataOS' })).toBeFocused()
   await page.keyboard.press('Escape')
 
@@ -369,7 +371,9 @@ test('opening a tool moves keyboard focus into it and closing it returns focus t
 })
 
 test('every canvas is sized for the scale it is shown at, on first paint and after a resize', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ baseURL, deviceScaleFactor: 2, viewport: { width: 1440, height: 980 } })
+  // A short window draws the focus device at about 0.79 of full size, far enough from 1 that a canvas sized
+  // before the device was scaled cannot pass for one sized after.
+  const context = await browser.newContext({ baseURL, deviceScaleFactor: 2, viewport: { width: 1440, height: 700 } })
   try {
     const page = await context.newPage()
     // Backing pixels per CSS pixel against what the frame loop should choose: the device ratio times the
@@ -381,14 +385,13 @@ test('every canvas is sized for the scale it is shown at, on first paint and aft
       const wanted = Math.min(2.5, Math.max(1, devicePixelRatio * host.getBoundingClientRect().width / host.offsetWidth))
       return Math.abs(canvas.width / canvas.offsetWidth - wanted) > .06 ? [`${selector}: ${(canvas.width / canvas.offsetWidth).toFixed(2)}, wanted ${wanted.toFixed(2)}`] : []
     }), [scope, fullCanvases])
-    await page.goto('./')
-    await expect(page.locator('.plate canvas').first()).toBeVisible()
-    // Gallery plates are drawn at about a third of full size: one backing pixel per CSS pixel is enough.
-    // No resize is sent, so a ratio measured before the plate was scaled would stay wrong and time this out.
-    await expect.poll(() => mismatches('.plates-grid')).toEqual([])
-    const widths = await page.locator('.plates-grid canvas').evaluateAll((all) => all.filter((canvas) => canvas.offsetWidth === 377).map((canvas) => canvas.width))
-    expect(widths.length).toBeGreaterThanOrEqual(fullCanvases.length)
-    expect([...new Set(widths)]).toEqual([377])
+    // In the focus device the surface is drawn a little under full size: the backing store follows that
+    // scale. No resize is sent, so a ratio measured before the device was scaled would stay wrong.
+    for (const id of ['field', 'strata', 'infinity']) {
+      await page.goto(`./#${id}`)
+      await expect(page.locator('.focus-device canvas').first()).toBeVisible()
+      await expect.poll(() => mismatches('.focus-device')).toEqual([])
+    }
 
     await page.goto('./#field')
     await page.getByRole('button', { name: 'Native Fullscreen' }).click()
@@ -554,11 +557,274 @@ test('engine settings survive a reload and corrupt storage falls back to the def
   }
 })
 
-test('the silhouette test filters every plate in the gallery', async ({ page }) => {
+// Opaque pixels on the transit layer (sampled): above zero while a transition is drawing, zero once it has cleared.
+// The layer is read from a copy, so the live canvas is never read back.
+const veiled = (page) => page.locator('.focus-device .transit').evaluate((canvas) => {
+  const copy = new OffscreenCanvas(canvas.width, canvas.height)
+  const context = copy.getContext('2d', { willReadFrequently: true })
+  context.drawImage(canvas, 0, 0)
+  const { data } = context.getImageData(0, 0, copy.width, copy.height)
+  let opaque = 0
+  for (let i = 3; i < data.length; i += 4 * 61) if (data[i] > 8) opaque++
+  return opaque
+})
+
+/**
+ * Records what every animation frame shows until stopped: the hash, how many plates are in flight and,
+ * on the device's transit layer, the share of pixels that are clear (the specimen shows through), ink
+ * (the lab's ground) and bright marks. A transition's states last a few hundred milliseconds; polling
+ * from the test can miss them on a busy machine, the page cannot.
+ */
+async function recording(page) {
+  await page.evaluate(() => {
+    const log = []
+    window.transitLog = log
+    window.transitRecording = true
+    const copy = new OffscreenCanvas(377, 836)
+    const context = copy.getContext('2d', { willReadFrequently: true })
+    const frame = () => {
+      if (!window.transitRecording) return
+      const layer = document.querySelector('.focus-device .transit')
+      const entry = {
+        hash: location.hash, ghosts: document.querySelectorAll('.plate-ghost').length, layer: !!layer, clear: 1, ink: 0, marks: 0,
+        index: !!document.querySelector('.plates-grid'), device: !!document.querySelector('.focus-device'), native: !!document.querySelector('.native-mode'),
+        hidden: [...document.querySelectorAll('.plate-raster')].filter((raster) => raster.style.visibility === 'hidden').length,
+      }
+      if (layer?.width) {
+        context.clearRect(0, 0, 377, 836)
+        context.drawImage(layer, 0, 0, 377, 836)
+        const { data } = context.getImageData(0, 0, 377, 836)
+        let clear = 0
+        let ink = 0
+        let marks = 0
+        for (let i = 0; i < data.length; i += 8) {
+          const light = .2126 * data[i] + .7152 * data[i + 1] + .0722 * data[i + 2]
+          if (data[i + 3] < 8) clear++
+          else if (data[i + 3] > 245 && light < 24) ink++
+          else if (data[i + 3] > 200 && light > 120) marks++
+        }
+        const total = data.length / 8
+        Object.assign(entry, { clear: clear / total, ink: ink / total, marks })
+      }
+      log.push(entry)
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  })
+  return async () => page.evaluate(() => {
+    window.transitRecording = false
+    return window.transitLog
+  })
+}
+
+const settledOn = async (page, hash) => {
+  await expect(page).toHaveURL(hash)
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  await expect.poll(() => veiled(page), { timeout: 4000 }).toBe(0)
+}
+
+test('the index shows every paradigm as a numbered halftone plate, with no name and no live engine', async ({ page }) => {
   await page.goto('./')
-  await page.getByRole('button', { name: /Silhouette test/ }).click()
-  const filters = await page.locator('.plate .iphone-screen > section').evaluateAll((sections) => sections.map((section) => getComputedStyle(section).filter))
-  expect(filters).toEqual(names.map(() => 'grayscale(1) blur(12px)'))
+  const plates = page.locator('.plate[data-plate]')
+  await expect(plates).toHaveCount(names.length)
+  for (let i = 0; i < names.length; i++) {
+    // What is seen is the plate number; the name follows it for assistive technology, and is not seen.
+    await expect(plates.nth(i).locator('.plate-number')).toHaveText(plateLabel(i))
+    await expect(plates.nth(i)).toHaveAccessibleName(`${plateLabel(i)} ${names[i]}, open in focus mode`)
+    // One square dot for each cell of the 13 x 29 raster the plate was measured on.
+    expect(await plates.nth(i).locator('path').evaluate((path) => path.getAttribute('d').split('M').length - 1)).toBe(13 * 29)
+  }
+  const drawn = await plates.locator('path').evaluateAll((paths) => new Set(paths.map((path) => path.getAttribute('d'))).size)
+  expect(drawn).toBe(names.length)
+  // No paradigm name is drawn anywhere in the index: every text that carries one is the visually hidden kind.
+  const shownNames = await page.locator('.plates').evaluate((index) => {
+    const found = []
+    const walker = document.createTreeWalker(index, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) {
+      const box = walker.currentNode.parentElement.getBoundingClientRect()
+      if (/[A-Za-z]+OS/.test(walker.currentNode.textContent) && box.width > 2 && box.height > 2) found.push(walker.currentNode.textContent)
+    }
+    return found
+  })
+  expect(shownNames).toEqual([])
+  await expect(page.locator('.plate--open')).toHaveAccessibleName(/^PL\. 08 Open/)
+  await expect(page.locator('.plate--open')).toHaveAttribute('href', /github\.com\/.+\/broke-glass/)
+  await expect(page.locator('canvas')).toHaveCount(0)
+})
+
+test('a plate flies to the device and develops into its paradigm, and Escape screens it back onto its plate', async ({ page }) => {
+  await page.goto('./')
+  const plate = page.locator('.plate[data-plate="quantum"]')
+  const raster = plate.locator('.plate-raster')
+  const before = await raster.boundingBox()
+  let stop = await recording(page)
+  await plate.click()
+  await settledOn(page, /#quantum$/)
+  let frames = (await stop()).filter((frame) => frame.layer)
+  await expect(page.locator('.quantum-os')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'QuantumOS' })).toBeFocused()
+  const flying = frames.findIndex((frame) => frame.ghosts > 0)
+  expect(flying, 'the plate never took off').toBeGreaterThanOrEqual(0)
+  // The plate is in the air from the first frame the device is shown in: it is never nowhere.
+  expect(frames[0].ghosts).toBe(1)
+  // Nothing of the paradigm is seen before the plate lands: until it is in flight the layer is closed.
+  expect(frames.slice(0, flying).filter((frame) => frame.clear > .02)).toEqual([])
+  // It develops: the layer opens through intermediate states, from closed to clear.
+  expect(frames.some((frame) => frame.clear > .1 && frame.clear < .9)).toBe(true)
+  expect(frames.at(-1).clear).toBe(1)
+
+  stop = await recording(page)
+  await page.keyboard.press('Escape')
+  await expect(page).not.toHaveURL(/#/)
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  await expect(raster).toBeVisible()
+  frames = await stop()
+  // The first frame of the index already has the plate in the air and its slot empty: it is never home early.
+  const home = frames.find((frame) => frame.index)
+  expect([home.ghosts, home.hidden]).toEqual([1, 1])
+  // Screened down on the device first, with the view still on QuantumOS; then flown home.
+  expect(frames.some((frame) => frame.hash === '#quantum' && frame.layer && frame.clear < .9 && frame.clear > .02)).toBe(true)
+  expect(frames.some((frame) => frame.hash === '' && frame.ghosts > 0)).toBe(true)
+  expect(await raster.boundingBox()).toEqual(before)
+  await expect(plate).toBeFocused()
+})
+
+test('a transition that is overtaken never uncovers the specimen and never leaves the device black', async ({ page }) => {
+  // Escape while the plate is still landing: the plate is printed and flown home without ever opening.
+  await page.goto('./')
+  await expect(page.locator('.plate[data-plate]')).toHaveCount(names.length)
+  let stop = await recording(page)
+  await page.locator('.plate[data-plate="wetware"]').click()
+  await expect(page.locator('.plate-ghost')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(page).not.toHaveURL(/#/)
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  const frames = (await stop()).filter((frame) => frame.layer)
+  expect(frames.length).toBeGreaterThan(0)
+  expect(frames.filter((frame) => frame.clear > .02)).toEqual([])
+
+  // A plate opened and then taken into fullscreen and back: the device is not left under a veil.
+  await page.locator('.plate[data-plate="field"]').click()
+  await settledOn(page, /#field$/)
+  await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect(page.locator('.focus-device .field-os')).toBeVisible()
+  await expect.poll(() => veiled(page), { timeout: 900 }).toBe(0)
+
+  // The same when fullscreen is entered while the plate is still on its way.
+  await page.keyboard.press('Escape')
+  await expect(page).not.toHaveURL(/#/)
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  await page.locator('.plate[data-plate="strata"]').click()
+  await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect(page.locator('.focus-device .strata-os')).toBeVisible()
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  await expect.poll(() => veiled(page), { timeout: 900 }).toBe(0)
+})
+
+test('on the index the number keys open plates, and asking for the shown paradigm mid-switch calls the switch off', async ({ page }) => {
+  await page.goto('./')
+  // The keys are listened for once the index has rendered.
+  await expect(page.locator('.plate[data-plate]')).toHaveCount(names.length)
+  await expect.poll(async () => {
+    await page.keyboard.press('5')
+    return page.url()
+  }).toMatch(/#spatial$/)
+  await expect(page.locator('.spatial-os')).toBeVisible()
+  await settledOn(page, /#spatial$/)
+  // 6 starts the migration to StrataOS; 5, delivered before any frame of it, keeps SpatialOS.
+  const stop = await recording(page)
+  await page.evaluate(() => { for (const key of ['6', '5']) window.dispatchEvent(new KeyboardEvent('keydown', { key })) })
+  await page.waitForTimeout(1200)
+  const frames = await stop()
+  expect(frames.filter((frame) => frame.hash !== '#spatial')).toEqual([])
+  // Called off before its first frame: the layer is never drawn on, so no migration ran in its place.
+  expect(frames.filter((frame) => frame.layer && frame.clear < 1)).toEqual([])
+  await expect(page.locator('.spatial-os')).toBeVisible()
+  expect(await veiled(page)).toBe(0)
+  // After the switch has committed, the same key is a new switch back, not a cancellation.
+  await page.keyboard.press('6')
+  await expect(page).toHaveURL(/#strata$/)
+  await page.keyboard.press('5')
+  await settledOn(page, /#spatial$/)
+  await expect(page.locator('.spatial-os')).toBeVisible()
+})
+
+test('fullscreen and the lab controls during a movement end it cleanly and keep what was asked for', async ({ page }) => {
+  // Fullscreen while the specimen is being screened down: fullscreen wins, and the lab still navigates after.
+  await page.goto('./#quantum')
+  await expect(page.locator('.quantum-os')).toBeVisible()
+  await expect.poll(() => veiled(page), { timeout: 4000 }).toBe(0)
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+  await expect(page.locator('.native-surface .quantum-os')).toBeVisible()
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect(page.locator('.focus-device .quantum-os')).toBeVisible()
+  await expect.poll(() => veiled(page), { timeout: 900 }).toBe(0)
+  await page.getByRole('button', { name: 'All plates' }).click()
+  await expect(page).not.toHaveURL(/#/)
+  await expect(page.locator('.plate-ghost')).toHaveCount(0)
+  await expect(page.locator('.plate[data-plate="quantum"] .plate-raster')).toBeVisible()
+
+  // Fullscreen while a plate is in the air: the plate is put down at once, not flown across the fullscreen OS.
+  let stop = await recording(page)
+  await page.locator('.plate[data-plate="strata"]').click()
+  await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+  await expect(page.locator('.native-surface .strata-os')).toBeVisible()
+  let frames = await stop()
+  expect(frames.filter((frame) => frame.native && frame.ghosts > 0)).toEqual([])
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect.poll(() => veiled(page), { timeout: 900 }).toBe(0)
+
+  // Fullscreen while the core is migrating: the switch that was asked for is made, in fullscreen.
+  await page.keyboard.press('3')
+  await page.getByRole('button', { name: 'Native Fullscreen' }).click()
+  await expect(page).toHaveURL(/#quantum$/)
+  await expect(page.locator('.native-surface .quantum-os')).toBeVisible()
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect.poll(() => veiled(page), { timeout: 900 }).toBe(0)
+
+  // The lab-bar Focus button, already pressed, does not call off a switch under way.
+  stop = await recording(page)
+  await page.keyboard.press('6')
+  await page.getByRole('navigation', { name: 'Showcase view' }).getByRole('button', { name: 'Focus' }).click()
+  await settledOn(page, /#strata$/)
+  frames = await stop()
+  expect(frames.some((frame) => frame.hash === '#strata')).toBe(true)
+  await expect(page.locator('.focus-device .strata-os')).toBeVisible()
+})
+
+test('switching paradigm passes through the bare core, and reduced motion switches at once', async ({ page }) => {
+  await page.goto('./#field')
+  await page.evaluate(() => document.fonts.ready)
+  await expect(page.locator('.field-os')).toBeVisible()
+  await expect.poll(() => veiled(page), { timeout: 4000 }).toBe(0)
+  let stop = await recording(page)
+  await page.keyboard.press('6')
+  await settledOn(page, /#strata$/)
+  let frames = (await stop()).filter((frame) => frame.layer)
+  // Held bare: the surface is the lab's ground, and on it only the samples and their legend.
+  const bare = frames.filter((frame) => frame.ink > .9 && frame.marks > 150)
+  expect(bare.length, JSON.stringify(frames.map((frame) => [frame.hash, +frame.ink.toFixed(2), frame.marks]))).toBeGreaterThan(0)
+  // The view changes under the veil: the first frame that shows the new hash is a bare one.
+  const changed = frames.find((frame) => frame.hash === '#strata')
+  expect(changed.ink).toBeGreaterThan(.9)
+  await expect(page.locator('.strata-os')).toBeVisible()
+
+  // A second switch before the first has finished takes over from it and lands where it was sent.
+  await page.keyboard.press('2')
+  await page.keyboard.press('7')
+  await settledOn(page, /#infinity$/)
+  await expect(page.locator('.infinity-os')).toBeVisible()
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  stop = await recording(page)
+  await page.keyboard.press('3')
+  await expect(page).toHaveURL(/#quantum$/)
+  await expect(page.locator('.quantum-os')).toBeVisible()
+  frames = await stop()
+  expect(frames.filter((frame) => frame.layer && frame.clear < 1)).toEqual([])
 })
 
 test('mobile gallery opens a safe uniformly scaled native surface in both orientations', async ({ browser, baseURL }) => {
