@@ -124,7 +124,8 @@ If the new column reads as one of the existing six, it is not a new paradigm.
 
 1. Add the three controls to `all eighteen engine controls change what their engine draws` (and update the count), and the new launcher to the console and search loops, in `tests/release.spec.mjs`.
 2. Add at least one invariant of the model to `tests/unit/physics.test.ts`. `tests/unit/registry.test.ts` checks the specification itself. Every `src/themes/*/*.ts` model file must keep 90 % line, statement and function coverage and 75 % branch coverage on its own; an engine without tests fails the gate.
-3. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
+3. Measure your plate with `npm run silhouettes` and commit `scripts/silhouettes.json`: `tests/unit/silhouette.test.ts` fails any two plates nearer than the floor in its header. Add your canvas to `engines` in `tests/settled.spec.mjs` and record it once with `UPDATE_BASELINES=1 npx playwright test tests/settled.spec.mjs`; every settled frame is then compared with `tests/baselines/settled-samples.json`. Re-record an existing engine only for an intended change to its renderer.
+4. `npm run typecheck && npm run build && npm test`. No errors. No warnings. `npm test` runs the import boundaries, the unit suite and the browser suite. CI runs the same gates before anything is deployed.
 
 </details>
 
