@@ -112,7 +112,7 @@ test('the next open slot is the one after the last registered paradigm', () => {
 test('every list of paradigms in the README names the registry in order', () => {
   const readme = read('README.md')
   const lists = {
-    'gallery alt': readme.match(/The running gallery: ([^"]+?) side by side/)?.[1],
+    'index alt': readme.match(/The plate index: ([^"]+?) as numbered halftone/)?.[1],
     'silhouette alt': readme.match(/Silhouette test: ([^"]+?) under a 12px/)?.[1],
   }
   for (const [where, text] of Object.entries(lists)) expect(listed(text ?? ''), where).toEqual(names)

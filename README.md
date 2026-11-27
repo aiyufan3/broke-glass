@@ -23,7 +23,7 @@ Mobile OS design is broke. It has lived paycheck to paycheck off Frutiger Aero's
 So this repo keeps one core and throws out the layout. Seven mobile operating systems, one session state, zero shared cards. Subjective human taste is the absolute truth here. Never let a machine decide what looks right. A model optimizes for the statistical average, and the average is boring. Tools execute. Taste decides.
 
 <p align="center">
-  <a href="https://aiyufan3.github.io/broke-glass/"><img src="docs/gallery-overview.png" width="100%" alt="The running gallery: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS, StrataOS and InfinityOS side by side on one live core."></a>
+  <a href="https://aiyufan3.github.io/broke-glass/"><img src="docs/gallery-overview.png" width="100%" alt="The plate index: FieldOS, WetwareOS, QuantumOS, TelemetryOS, SpatialOS, StrataOS and InfinityOS as numbered halftone silhouettes, with plate 08 open."></a>
 </p>
 
 ## Specimen sheet
@@ -67,9 +67,10 @@ The lab inside is called Next-Era Y3K. Open it and pick a plate.
 | **Cross-paradigm sync** | Console, Telemetry, Neural Search and Media exist in all seven, each in its own geometry. Run `spike` in one console, switch paradigm, and the same timestamped event is in the log while that engine takes the load. Also: `help` `status` `scan` `clear`. |
 | **Design DNA** | Three live sliders per paradigm. Each one changes what the engine draws. The release suite fails if one stops. Settings survive a reload. |
 | **Copy Paradigm Prompt** | Copies the paradigm's grammar, palette and current slider values as a prompt. |
-| **Native fullscreen** | Edge to edge, uniformly scaled, desktop and phone. On a phone the gallery puts it one tap away. |
-| **Silhouette test** | A switch in the gallery. Applies the blur to all seven plates at once. |
-| **Keys** | <kbd>1</kbd>–<kbd>7</kbd> switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the gallery |
+| **Native fullscreen** | Edge to edge, uniformly scaled, desktop and phone. On a phone the index puts it one tap away. |
+| **Plate index** | The home page is the silhouette test. Each paradigm is shown as it was measured, a 13 × 29 halftone of its home screen in grey under the blur, with a plate number and no name. Choose by mass. A plate flies to the device and develops into its paradigm; <kbd>Esc</kbd> screens it back onto its plate. |
+| **Core migration** | Switching paradigm passes through the bare core: the 48 latency samples leave the first geometry, line up as the raw trace with the last log line and the playhead, and seat in the next. It is the one thing all seven share, shown once with nothing around it. |
+| **Keys** | <kbd>1</kbd>–<kbd>7</kbd> open a plate from the index, or switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the gallery |
 
 <details>
 <summary><strong>Contribute Paradigm #08</strong></summary>
@@ -91,13 +92,13 @@ src/themes/<id>/
 src/themes/index.ts       one line in `surfaces`
 ```
 
-`surfaces` is typed `Record<ParadigmId, …>`. The build fails until every registered specification has a surface. Gallery order, the switcher, the fullscreen selector and the number keys follow the registry.
+`surfaces` is typed `Record<ParadigmId, …>`. The build fails until every registered specification has a surface. Index order, the switcher, the fullscreen selector and the number keys follow the registry.
 
 **Rules**
 
 1. Import `src/data/*`, `src/state/*` and your own folder. Nothing from another theme. Nothing from `src/components`. `npm run check:boundaries` enforces this with dependency-cruiser (`.dependency-cruiser.cjs`); `tests/unit/contract.test.ts` fails any selector or `@keyframes` in your CSS that does not start from a class prefixed with your id or an abbreviation of it (`tel-` for `telemetry`), any CSS `@import`, and any `import.meta.glob` or `new URL(…, import.meta.url)` that reaches outside your folder.
 2. Fill the 377 × 836 surface. The status bar is drawn over the top 44 px and the home indicator over the bottom 12 px.
-3. Drive the engine with `useFrameLoop(host, interactive, draw)`. A frame with `still: true` must render the settled state: it is issued for gallery plates, hidden tabs, off-screen hosts and `prefers-reduced-motion`.
+3. Drive the engine with `useFrameLoop(host, interactive, draw)`. A frame with `still: true` must render the settled state: it is issued for non-interactive mounts, hidden tabs, off-screen hosts and `prefers-reduced-motion`, and it is the frame `npm run silhouettes` measures.
 4. Read state with `useOS(selector, interactive)` and, inside a frame loop, `useOSSnapshot(interactive)`. Select the smallest slice. With `interactive` false neither subscribes.
 5. `state.impulse` increments on every command, scan, spike and inspection. Give it a physical response.
 6. Three controls. Each must change the settled frame or start a visible response.
@@ -114,7 +115,7 @@ src/themes/index.ts       one line in `surfaces`
 
 **The silhouette rule**
 
-Under `grayscale(1) blur(12px)` the home screen must be identifiable by its distribution of mass alone, beside the other seven. Turn on **Silhouette test** in the gallery, then print the plate:
+Under `grayscale(1) blur(12px)` the home screen must be identifiable by its distribution of mass alone, beside the other seven. The index shows nothing else, so measure your plate and look at it there, then print the sheet:
 
 ```sh
 npm run silhouettes   # measure every registered plate from the running app
@@ -147,7 +148,7 @@ If the new column reads as one of the existing seven, it is not a new paradigm.
 | StrataOS | Bed boundaries laid down by deposition, thinned by compaction and bent by a fold. Every deformation is a map of depth onto depth with slope below one, so no horizon can cross another. Excavating a formation lifts the overburden and presses the beds below toward bedrock with one shared time constant. | `strata/sediment.ts` | Run `spike`. The block beyond the fault drops and the column keeps trembling. |
 | InfinityOS | A pinhole camera over a floor of dots in rows to one vanishing point; every radius falls strictly with depth. Proliferation caps the dots and sets the lattice spacing, Infinity Depth how far the rows reach toward the horizon, and Obliteration grows each dot toward its neighbours until they merge. Four Fibonacci-lattice spheres turn above it; a selected one swells around the eye into a room skinned in its own hue. | `infinity/dots.ts` | Run `spike` inside an orb. New dots land around it and stay. |
 
-All seven draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Design DNA settings are saved to `localStorage` under a versioned key (`src/state/persist.ts`) and restored on reload; a value that fails validation falls back to its default. Logs, tools, telemetry and media live in memory until reload, and gallery plates always show the defaults.
+All seven draw to Canvas 2D. SpatialOS adds CSS 3D for its slabs. Readouts describe a local simulation. Design DNA settings are saved to `localStorage` under a versioned key (`src/state/persist.ts`) and restored on reload; a value that fails validation falls back to its default. Logs, tools, telemetry and media live in memory until reload, and the index plates are the measured defaults.
 
 </details>
 
@@ -177,7 +178,7 @@ npm run check:boundaries   # dependency-cruiser: paradigm, core and chrome impor
 npm run test:unit   # Vitest: engine invariants and registry, with model coverage in coverage.local/
 npm run test:e2e    # Playwright: the browser release suite, settled-frame samples and the README checks
 npm run check:bundle   # after a build: dist/ and its largest script against their byte budgets
-npm run test:perf   # after a build: long tasks in the gallery and frame times in focus, on the production bundle
+npm run test:perf   # after a build: long tasks on the index and frame times in focus, on the production bundle
 ```
 
 Every performance budget is in `tests/perf-budgets.mjs`, with the measurement it was set from.
@@ -192,10 +193,10 @@ Every graphic on this page is generated. Nothing is drawn by hand and nothing is
 npm run silhouettes   # scripts/silhouettes.json: luminance of each plate under the blur
 npm run posters       # docs/*.svg and public/og-preview.svg, light and dark
 npm run og            # posters, then public/og-preview.png rasterized from the SVG
-npm run screens -- <dir>   # 2× PNGs: gallery, seven focus views, mobile, each paradigm at rest and under load
+npm run screens -- <dir>   # 2× PNGs: index, seven focus views, mobile, each paradigm at rest and under load
 ```
 
-The README gallery is `00-gallery-overview@2x.png` from `npm run screens`. The social tags point at the PNG. Crawlers do not render SVG.
+The index capture above is `00-gallery-overview@2x.png` from `npm run screens`. The social tags point at the PNG. Crawlers do not render SVG.
 
 **Deploy**
 
