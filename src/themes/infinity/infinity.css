@@ -1,0 +1,153 @@
+.infinity-os {
+  --infinity-white: #ffffff;
+  --infinity-ink: #0b0b0b;
+  --infinity-red: #e60012;
+  --infinity-yellow: #ffd400;
+  --infinity-blue: #0057ff;
+  --infinity-green: #00a651;
+  --infinity-pink: #ff3ea5;
+  --infinity-display: Futura, "Futura PT", "Avenir Next", Avenir, "Century Gothic", "Trebuchet MS", sans-serif;
+  --infinity-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --infinity-swell: 0;
+  --infinity-orb: 0px;
+  /* Paper for text: a field of the five hues, every one a dot. */
+  --infinity-confetti:
+    radial-gradient(circle at 25% 25%, var(--infinity-red) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 75% 25%, var(--infinity-yellow) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 50% 75%, var(--infinity-blue) 0 2px, transparent 2.5px);
+  position: absolute; inset: 0; overflow: hidden; isolation: isolate;
+  color: var(--infinity-ink); background: var(--infinity-white); font-family: var(--infinity-display); font-variant-numeric: tabular-nums;
+}
+.infinity-field { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.infinity-os :is(button, input):disabled { opacity: 1; cursor: default; }
+.infinity-os :is(button, input):focus-visible { outline: 2px dotted var(--infinity-ink); outline-offset: 3px; }
+
+.infinity-head { position: absolute; top: 54px; left: 18px; right: 18px; opacity: calc(1 - var(--infinity-swell)); pointer-events: none; }
+.infinity-head > p { display: flex; justify-content: space-between; font: 700 8.5px/1 var(--infinity-mono); letter-spacing: .14em; text-transform: uppercase; }
+.infinity-head h2 { margin-top: 12px; font-size: 50px; font-weight: 800; line-height: .9; letter-spacing: -.035em; }
+.infinity-head h2 span { color: var(--infinity-red); }
+.infinity-readout { display: inline-block; margin-top: 12px; padding: 5px 10px 5px 0; font: 600 10px/1 var(--infinity-mono); letter-spacing: .03em; white-space: nowrap; }
+.infinity-os[data-stress="true"] .infinity-head > p span:last-child { color: var(--infinity-red); }
+
+/* The launchers are the orbs the renderer draws: round hit areas laid over the spheres. */
+.infinity-orbs { position: absolute; inset: 0; pointer-events: none; }
+.infinity-orb {
+  position: absolute; left: 0; top: 0; width: var(--infinity-orb); height: var(--infinity-orb); border-radius: 50%;
+  transform: translate(-50%, -50%); pointer-events: auto;
+}
+.infinity-orb span {
+  position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); padding: 3px 8px; border-radius: 999px;
+  background: var(--infinity-white); font: 700 9px/1 var(--infinity-mono); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+  pointer-events: none;
+}
+/* The far Search orb hangs just above the Console orb, so its label sits over it rather than across Console. */
+.infinity-orb:nth-child(3) span { top: auto; bottom: calc(100% + 6px); }
+.infinity-orb:hover:enabled span, .infinity-orb:focus-visible span { color: var(--infinity-white); background: var(--infinity-ink); }
+.infinity-os[data-active] .infinity-orbs { visibility: hidden; }
+
+/* Inside the orb. The canvas paints the room; the tool stands in it, fading in as the orb closes around the eye. */
+.infinity-room {
+  position: absolute; inset: 44px 0 12px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 16px 20px 18px; opacity: var(--infinity-swell); overflow: hidden;
+}
+.infinity-room[inert] { pointer-events: none; }
+.infinity-room-head { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.infinity-room-head p { padding: 4px 10px; border-radius: 999px; background: var(--infinity-white); font: 700 8.5px/1 var(--infinity-mono); letter-spacing: .14em; text-transform: uppercase; }
+.infinity-room-head h3 { padding: 2px 16px 6px; border-radius: 999px; background: var(--infinity-white); font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -.035em; }
+.infinity-room-head button,
+.infinity-stress,
+.infinity-detail button {
+  padding: 8px 16px; border: 2px dotted var(--infinity-ink); border-radius: 999px; background: var(--infinity-white);
+  font: 700 10px/1 var(--infinity-mono); letter-spacing: .1em; text-transform: uppercase;
+}
+.infinity-room-head button:hover, .infinity-stress:hover { background: var(--infinity-yellow); }
+
+.infinity-ring {
+  flex: none; display: grid; place-items: center; width: 288px; height: 288px; padding: 46px 34px; border: 7px dotted var(--infinity-hue);
+  border-radius: 50%; background: var(--infinity-white);
+}
+.infinity-log { max-height: 100%; overflow: auto; list-style: none; text-align: center; font: 500 10.5px/1.35 var(--infinity-mono); scrollbar-width: none; }
+.infinity-log li { margin-bottom: 9px; overflow-wrap: anywhere; }
+.infinity-log li::before { content: ""; display: block; width: 8px; height: 8px; margin: 0 auto 4px; border-radius: 50%; background: var(--infinity-hue); }
+.infinity-log time { display: block; font-size: 9px; opacity: .6; }
+.infinity-log li[data-level="warn"] span { color: var(--infinity-red); }
+.infinity-prompt {
+  display: flex; align-items: center; width: 100%; max-width: 320px; padding: 4px 4px 4px 16px; border: 2px dotted var(--infinity-ink);
+  border-radius: 999px; background: var(--infinity-white);
+}
+.infinity-prompt input { flex: 1; min-width: 0; border: 0; background: transparent; font: 500 13px/1 var(--infinity-mono); outline: none; }
+.infinity-prompt button { width: 44px; height: 44px; border-radius: 50%; color: var(--infinity-white); background: var(--infinity-red); font: 800 10px/1 var(--infinity-display); text-transform: uppercase; }
+.infinity-quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.infinity-quick button,
+.infinity-channels button {
+  display: grid; place-items: center; width: 54px; height: 54px; border: 5px solid var(--infinity-hue); border-radius: 50%;
+  background: var(--infinity-white); font: 700 10px/1 var(--infinity-mono);
+}
+.infinity-quick button:hover, .infinity-channels button[aria-pressed="true"] { color: var(--infinity-white); background: var(--infinity-hue); }
+
+.infinity-telemetry { display: grid; justify-items: center; gap: 12px; }
+.infinity-latency {
+  display: grid; place-content: center; width: 116px; height: 116px; border-radius: 50%; color: var(--infinity-white);
+  background: var(--infinity-blue); text-align: center;
+}
+.infinity-os[data-stress="true"] .infinity-latency { background: var(--infinity-red); }
+.infinity-latency strong { font-size: 34px; font-weight: 800; line-height: 1; }
+.infinity-latency span { font: 700 10px/1 var(--infinity-mono); letter-spacing: .14em; text-transform: uppercase; }
+.infinity-matrix { display: grid; justify-items: center; gap: 6px; padding: 14px 18px 10px; border-radius: 999px; background: var(--infinity-white); }
+.infinity-matrix canvas { width: 272px; height: 150px; }
+.infinity-matrix figcaption { font: 600 8.5px/1 var(--infinity-mono); letter-spacing: .1em; text-transform: uppercase; }
+.infinity-channels { display: flex; gap: 8px; }
+.infinity-stress[aria-pressed="true"] { color: var(--infinity-white); background: var(--infinity-red); }
+
+.infinity-query {
+  width: 100%; max-width: 320px; padding: 11px 18px; border: 2px dotted var(--infinity-ink); border-radius: 999px;
+  background: var(--infinity-white); font: 500 13px/1 var(--infinity-mono);
+}
+.infinity-results { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 330px; min-height: 0; overflow: auto; list-style: none; scrollbar-width: none; }
+/* Results are orbs called in from the horizon: each arrives small and far, then lands at full size. */
+.infinity-results li { animation: infinity-approach .5s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--infinity-order) * 60ms); }
+@keyframes infinity-approach {
+  from { opacity: 0; transform: translateY(-140px) scale(.1); }
+}
+.infinity-result {
+  display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px; align-items: center; width: 100%; padding: 6px 16px 6px 6px;
+  border: 2px dotted var(--infinity-hue); border-radius: 999px; background: var(--infinity-white); text-align: left;
+}
+.infinity-result i { grid-row: span 2; width: 38px; height: 38px; border-radius: 50%; background: var(--infinity-hue); }
+.infinity-result strong { font-size: 15px; font-weight: 800; line-height: 1.1; }
+.infinity-result span { font: 600 9px/1.2 var(--infinity-mono); letter-spacing: .08em; text-transform: uppercase; }
+.infinity-result[aria-expanded="true"] i { box-shadow: 0 0 0 4px var(--infinity-white), 0 0 0 7px var(--infinity-hue); }
+.infinity-detail { display: grid; justify-items: start; gap: 8px; margin: 8px 6px 4px; padding: 14px 36px; border-radius: 999px; background: var(--infinity-white); font-size: 12.5px; line-height: 1.35; }
+.infinity-detail button { color: var(--infinity-white); background: var(--infinity-hue); border-color: var(--infinity-white); }
+.infinity-empty { padding: 8px 16px; border-radius: 999px; background: var(--infinity-white); font: 600 11px/1 var(--infinity-mono); }
+
+.infinity-media { display: grid; justify-items: center; gap: 12px; width: 100%; }
+/* The sun is one dot: it swells with the track and breathes while it plays. */
+.infinity-sun {
+  width: 210px; height: 210px; border-radius: 50%; background: var(--infinity-hue); transform: scale(var(--infinity-sun));
+  transition: transform .3s ease-out;
+}
+.infinity-media[data-playing="true"] .infinity-sun { animation: infinity-breathe 1.4s ease-in-out infinite alternate; }
+@keyframes infinity-breathe {
+  to { transform: scale(calc(var(--infinity-sun) * 1.06)); }
+}
+.infinity-track { display: grid; justify-items: center; gap: 4px; padding: 10px 22px; border-radius: 999px; background: var(--infinity-white); text-align: center; }
+.infinity-track span { font: 600 9px/1.2 var(--infinity-mono); letter-spacing: .1em; text-transform: uppercase; }
+.infinity-track strong { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.infinity-seek {
+  width: 100%; max-width: 300px; height: 16px; appearance: none; border-radius: 999px; background-color: var(--infinity-white);
+  background-image: var(--infinity-confetti); background-size: 16px 16px;
+}
+.infinity-seek::-webkit-slider-thumb { width: 24px; height: 24px; appearance: none; border-radius: 50%; background: var(--infinity-red); }
+.infinity-seek::-moz-range-thumb { width: 24px; height: 24px; border: 0; border-radius: 50%; background: var(--infinity-red); }
+.infinity-transport { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.infinity-transport button {
+  min-width: 60px; height: 60px; padding: 0 12px; border: 5px solid var(--infinity-ink); border-radius: 999px; background: var(--infinity-white);
+  font: 700 10px/1 var(--infinity-mono); letter-spacing: .06em; text-transform: uppercase;
+}
+.infinity-transport button[aria-pressed="true"] { color: var(--infinity-white); background: var(--infinity-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .infinity-results li, .infinity-media[data-playing="true"] .infinity-sun { animation: none; }
+  .infinity-sun { transition: none; }
+}

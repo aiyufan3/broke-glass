@@ -23,7 +23,7 @@ export type ParadigmSpec = {
   polarity: string
   navigation: string
   rules: [string, string, string]
-  bans: [string, string]
+  bans: [string, string] | [string, string, string]
   controls: [EngineControl, EngineControl, EngineControl]
   colors: [string, string, string, string]
   type: [string, string]
@@ -156,6 +156,27 @@ export const paradigms = {
     colors: ['#E9DFC9', '#8A6F52', '#2B1E15', '#B8401E'],
     type: ['Iowan Old Style / Georgia', 'System monospace'],
     grammar: 'Draw the interface as a geological section. Full-width sediment beds fill the screen below a pale water column, their thickness set by deposition and compaction, sand at the surface darkening to umber at bedrock, each patterned with its lithology symbol. One oxide-red core descends on the right with a depth scale in metres. Tools are formations: selecting one drills the core to its depth, lifts the overburden and presses the beds below toward bedrock, opening a gallery whose walls are the cut horizons. Commands land fresh sediment and send a shear wave down the column; under load the section faults.',
+  },
+  infinity: {
+    name: 'InfinityOS',
+    domain: 'Infinite Dots & Obliteration',
+    accent: '#E60012',
+    statusBar: 'ink',
+    summary: 'Space repeats itself into oblivion. A floor of polka dots runs to a vanishing point and four dotted orbs float above it. Touch one and it swells until you are inside it, and every surface in the room is dots.',
+    lineage: 'Yayoi Kusama · Infinity Mirror Rooms · surrealist accumulation',
+    geometry: 'Perspective dot floor to one vanishing point, four floating dotted orbs',
+    polarity: 'Infinity white, saturated multi-hue dots, one black horizon',
+    navigation: 'Touch an orb, be swallowed by it, step back out to the field',
+    rules: ['Every surface is dots', 'Repetition to the horizon', 'One vanishing point'],
+    bans: ['Bare undecorated surfaces', 'Rectangular cards', 'A second horizon'],
+    controls: [
+      { label: 'Proliferation', min: 200, max: 2400, initial: 900, effect: 'Dots seeded on the floor plane. Each command adds more; the field accumulates instead of resetting.' },
+      { label: 'Obliteration', min: 0, max: 100, initial: 35, effect: 'How far every dot grows toward its neighbours. At 100 the dots touch and the field dissolves into solid colour.' },
+      { label: 'Infinity Depth', min: 4, max: 24, initial: 12, effect: 'Rows of dots receding to the vanishing point. More rows, deeper room.' },
+    ],
+    colors: ['#FFFFFF', '#FFD400', '#E60012', '#0057FF'],
+    type: ['Futura / Avenir Next Heavy', 'System monospace'],
+    grammar: 'Draw the interface as an infinity room skinned in polka dots. A white floor of dots in saturated red, yellow, blue, green and pink recedes in true perspective to a single vanishing point, dots shrinking and crowding as they near the horizon. Four spheres float at staggered depths, each skinned in dots of one hue laid over its surface on a Fibonacci lattice, slowly turning. Selecting a sphere swells it until it fills the screen: inside, the walls carry the same dots at room scale and the tool is furniture in that room. Every command lands as a burst of new dots around the point of action, and under load the whole field pulses outward from the horizon. Nothing is bare, nothing is a rectangle, and no dot is ever square.',
   },
 } as const satisfies Record<string, ParadigmSpec>
 

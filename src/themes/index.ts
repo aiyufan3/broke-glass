@@ -7,6 +7,7 @@ import QuantumOS from './quantum/QuantumOS'
 import TelemetryOS from './telemetry/TelemetryOS'
 import SpatialOS from './spatial/SpatialOS'
 import StrataOS from './strata/StrataOS'
+import InfinityOS from './infinity/InfinityOS'
 
 const surfaces: Record<ParadigmId, ComponentType<ParadigmProps>> = {
   field: FieldOS,
@@ -15,6 +16,7 @@ const surfaces: Record<ParadigmId, ComponentType<ParadigmProps>> = {
   telemetry: TelemetryOS,
   spatial: SpatialOS,
   strata: StrataOS,
+  infinity: InfinityOS,
 }
 
 export const themes = paradigmIds.map((id) => ({ id, ...paradigms[id], Component: surfaces[id] }))
