@@ -27,6 +27,108 @@ const park = (page) => page.mouse.move(6, 6)
 const tools = ['.field-workspace', '.wet-organ', '.quantum-workspace', '.tel-bay', '.spatial-chamber', '.strata-gallery', '.infinity-room']
 const fullCanvases = ['.field-map', '.wet-tissue', '.quantum-sky', '.spatial-corridor', '.strata-section', '.infinity-field']
 
+/** sRGB channels, 0 to 255, of the first colour in a computed value: rgb(…) or color(srgb …). */
+function channels(value) {
+  const srgb = /color\(srgb ([\d.e+-]+) ([\d.e+-]+) ([\d.e+-]+)/.exec(value)
+  return srgb ? srgb.slice(1, 4).map((channel) => Math.round(Number(channel) * 255)) : value.match(/[\d.]+/g).slice(0, 3).map(Number)
+}
+
+function contrastOf(a, b) {
+  const linear = (value) => { const unit = value / 255; return unit <= .03928 ? unit / 12.92 : ((unit + .055) / 1.055) ** 2.4 }
+  const luminance = (value) => { const [r, g, b] = channels(value).map(linear); return .2126 * r + .7152 * g + .0722 * b }
+  const [dark, light] = [luminance(a), luminance(b)].sort((x, y) => x - y)
+  return (light + .05) / (dark + .05)
+}
+
+/** A soft keyboard raised: the window loses height, the screen it is on does not. Returns once the page has drawn it. */
+async function raiseKeyboard(page, height) {
+  const metrics = await page.evaluate(() => ({ width: innerWidth, screenWidth: screen.width, screenHeight: screen.height, deviceScaleFactor: devicePixelRatio }))
+  await page.evaluate(() => {
+    window.keyboardRaised = new Promise((resolve) => addEventListener('resize', () => requestAnimationFrame(() => requestAnimationFrame(resolve)), { once: true }))
+  })
+  const session = await page.context().newCDPSession(page)
+  await session.send('Emulation.setDeviceMetricsOverride', { ...metrics, height, mobile: true })
+  await page.evaluate(() => window.keyboardRaised)
+}
+
+/**
+ * The least contrast between the strip's ink and what its labels are set on: the strip is shot with its
+ * text lifted off, and every pixel under every label is read.
+ */
+async function stripContrast(page) {
+  const strip = page.locator('.specimen-strip')
+  const ink = channels(await strip.evaluate((element) => getComputedStyle(element).color))
+  const area = await strip.boundingBox()
+  const boxes = await strip.evaluate((element) => [...element.querySelectorAll('button, [aria-live]')].map((label) => {
+    const range = document.createRange()
+    range.selectNodeContents(label)
+    const { left, top, width, height } = range.getBoundingClientRect()
+    return { left, top, width, height }
+  }))
+  const lift = await page.addStyleTag({ content: '.specimen-strip, .specimen-strip * { color: transparent !important; }' })
+  const shot = await page.screenshot({ clip: area })
+  await lift.evaluate((tag) => tag.remove())
+  return page.evaluate(async ({ png, ink, area, boxes }) => {
+    const image = new Image()
+    image.src = `data:image/png;base64,${png}`
+    await image.decode()
+    const ratio = image.width / area.width
+    const canvas = new OffscreenCanvas(image.width, image.height)
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    context.drawImage(image, 0, 0)
+    const { data } = context.getImageData(0, 0, image.width, image.height)
+    const linear = (value) => { const unit = value / 255; return unit <= .03928 ? unit / 12.92 : ((unit + .055) / 1.055) ** 2.4 }
+    const luminance = (r, g, b) => .2126 * linear(r) + .7152 * linear(g) + .0722 * linear(b)
+    const inkLight = luminance(...ink)
+    let least = 21
+    for (const box of boxes) {
+      for (let y = Math.max(0, Math.floor((box.top - area.y) * ratio)); y < Math.min(image.height, Math.ceil((box.top + box.height - area.y) * ratio)); y++) {
+        for (let x = Math.max(0, Math.floor((box.left - area.x) * ratio)); x < Math.min(image.width, Math.ceil((box.left + box.width - area.x) * ratio)); x++) {
+          const i = (y * image.width + x) * 4
+          const [dark, light] = [inkLight, luminance(data[i], data[i + 1], data[i + 2])].sort((a, b) => a - b)
+          least = Math.min(least, (light + .05) / (dark + .05))
+        }
+      }
+    }
+    return least
+  }, { png: shot.toString('base64'), ink, area, boxes })
+}
+
+/**
+ * Controls in the specimen that meet WCAG 2.5.8 at the specimen's own size but not as a phone draws it:
+ * 24 × 24 CSS px, or a 24 px circle on the control's centre that meets no other control and no other
+ * small control's circle.
+ */
+function brokenTargets(page) {
+  return page.evaluate(() => {
+    const surface = document.querySelector('.bare-surface')
+    const frame = surface.getBoundingClientRect()
+    const scale = frame.height / 836
+    const targets = [...surface.querySelectorAll('button, a[href], input:not([type=hidden]), select, textarea, [role=button], [role=slider], [tabindex]:not([tabindex="-1"])')]
+      .filter((element) => !element.closest('[inert]') && !element.disabled && getComputedStyle(element).visibility !== 'hidden')
+      .map((element) => ({ element, box: element.getBoundingClientRect() }))
+      .filter(({ box }) => box.width > 2 && box.height > 2)
+      .map(({ element, box }) => ({
+        name: element.getAttribute('aria-label') || element.textContent.trim().slice(0, 24),
+        x: (box.left - frame.left) / scale, y: (box.top - frame.top) / scale, w: box.width / scale, h: box.height / scale,
+      }))
+    const passes = (target, s) => {
+      if (target.w * s >= 24 && target.h * s >= 24) return true
+      const cx = (target.x + target.w / 2) * s
+      const cy = (target.y + target.h / 2) * s
+      return targets.every((other) => {
+        if (other === target) return true
+        const dx = Math.max(other.x * s - cx, 0, cx - (other.x + other.w) * s)
+        const dy = Math.max(other.y * s - cy, 0, cy - (other.y + other.h) * s)
+        if (Math.hypot(dx, dy) < 12) return false
+        const small = other.w * s < 24 || other.h * s < 24
+        return !small || Math.hypot((other.x + other.w / 2) * s - cx, (other.y + other.h / 2) * s - cy) >= 24
+      })
+    }
+    return targets.filter((target) => passes(target, 1) && !passes(target, scale)).map((target) => target.name)
+  })
+}
+
 async function drag(page, label, end) {
   const input = page.getByRole('slider', { name: label, exact: true })
   await input.scrollIntoViewIfNeeded()
@@ -559,7 +661,7 @@ test('engine settings survive a reload and corrupt storage falls back to the def
 
 // Opaque pixels on the transit layer (sampled): above zero while a transition is drawing, zero once it has cleared.
 // The layer is read from a copy, so the live canvas is never read back.
-const veiled = (page) => page.locator('.focus-device .transit').evaluate((canvas) => {
+const veiled = (page) => page.locator('[data-specimen-screen] .transit').evaluate((canvas) => {
   const copy = new OffscreenCanvas(canvas.width, canvas.height)
   const context = copy.getContext('2d', { willReadFrequently: true })
   context.drawImage(canvas, 0, 0)
@@ -578,18 +680,28 @@ const veiled = (page) => page.locator('.focus-device .transit').evaluate((canvas
 async function recording(page) {
   await page.evaluate(() => {
     const log = []
+    const id = (window.transitSequence ?? 0) + 1
+    window.transitSequence = id
+    window.transitRecording = id
     window.transitLog = log
-    window.transitRecording = true
     const copy = new OffscreenCanvas(377, 836)
     const context = copy.getContext('2d', { willReadFrequently: true })
     const frame = () => {
-      if (!window.transitRecording) return
-      const layer = document.querySelector('.focus-device .transit')
+      if (window.transitRecording !== id) return
+      const layer = document.querySelector('[data-specimen-screen] .transit')
       const entry = {
-        hash: location.hash, ghosts: document.querySelectorAll('.plate-ghost').length, layer: !!layer, clear: 1, ink: 0, marks: 0,
+        hash: location.hash, ghosts: document.querySelectorAll('.plate-ghost').length, layer: !!layer, clear: 1, ink: 0, marks: 0, top: Math.round(scrollY),
         index: !!document.querySelector('.plates-grid'), device: !!document.querySelector('.focus-device'), native: !!document.querySelector('.native-mode'),
         hidden: [...document.querySelectorAll('.plate-raster')].filter((raster) => raster.style.visibility === 'hidden').length,
       }
+      // On a phone: the ground laid around the surface, the strip's ink, and where a plate in flight starts.
+      const stage = document.querySelector('.bare-stage')
+      const strip = document.querySelector('.specimen-strip')
+      const ghost = document.querySelector('.plate-ghost')
+      Object.assign(entry, {
+        ground: stage ? getComputedStyle(stage).backgroundColor : '', strip: strip ? getComputedStyle(strip).color : '',
+        ghostTop: ghost ? Math.round(ghost.getBoundingClientRect().top) : null,
+      })
       if (layer?.width) {
         context.clearRect(0, 0, 377, 836)
         context.drawImage(layer, 0, 0, 377, 836)
@@ -611,10 +723,11 @@ async function recording(page) {
     }
     requestAnimationFrame(frame)
   })
-  return async () => page.evaluate(() => {
-    window.transitRecording = false
-    return window.transitLog
-  })
+  // Stopped two frames after it is asked to: a layer cleared just before the test looked is seen cleared.
+  return async () => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => {
+    window.transitRecording = 0
+    resolve(window.transitLog)
+  }))))
 }
 
 const settledOn = async (page, hash) => {
@@ -667,8 +780,10 @@ test('a plate flies to the device and develops into its paradigm, and Escape scr
   expect(flying, 'the plate never took off').toBeGreaterThanOrEqual(0)
   // The plate is in the air from the first frame the device is shown in: it is never nowhere.
   expect(frames[0].ghosts).toBe(1)
-  // Nothing of the paradigm is seen before the plate lands: until it is in flight the layer is closed.
+  // Nothing of the paradigm is seen before the plate lands: until it is in flight the layer is closed,
+  // and it stays closed for as long as the plate is in the air.
   expect(frames.slice(0, flying).filter((frame) => frame.clear > .02)).toEqual([])
+  expect(frames.filter((frame) => frame.ghosts > 0 && frame.clear > .02)).toEqual([])
   // It develops: the layer opens through intermediate states, from closed to clear.
   expect(frames.some((frame) => frame.clear > .1 && frame.clear < .9)).toBe(true)
   expect(frames.at(-1).clear).toBe(1)
@@ -733,16 +848,40 @@ test('on the index the number keys open plates, and asking for the shown paradig
   }).toMatch(/#spatial$/)
   await expect(page.locator('.spatial-os')).toBeVisible()
   await settledOn(page, /#spatial$/)
-  // 6 starts the migration to StrataOS; 5, delivered before any frame of it, keeps SpatialOS.
+  // 6 starts the migration to StrataOS; 5, delivered before any frame of it, keeps SpatialOS. The page is
+  // being read below the specimen, and a switch called off leaves it there.
+  await page.setViewportSize({ width: 1440, height: 700 })
+  await expect.poll(() => page.evaluate(() => { window.scrollTo(0, 300); return scrollY })).toBe(300)
   const stop = await recording(page)
   await page.evaluate(() => { for (const key of ['6', '5']) window.dispatchEvent(new KeyboardEvent('keydown', { key })) })
   await page.waitForTimeout(1200)
   const frames = await stop()
+  expect(await page.evaluate(() => scrollY)).toBe(300)
   expect(frames.filter((frame) => frame.hash !== '#spatial')).toEqual([])
   // Called off before its first frame: the layer is never drawn on, so no migration ran in its place.
   expect(frames.filter((frame) => frame.layer && frame.clear < 1)).toEqual([])
   await expect(page.locator('.spatial-os')).toBeVisible()
   expect(await veiled(page)).toBe(0)
+  // A switch that goes ahead is played at the top, and the entry it leaves keeps the place it was read
+  // at: Back returns there.
+  await page.keyboard.press('6')
+  await settledOn(page, /#strata$/)
+  expect(await page.evaluate(() => scrollY)).toBe(0)
+  await page.goBack()
+  await expect(page).toHaveURL(/#spatial$/)
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(300)
+  // Fullscreen taken during a return ends that movement and forgets where it scrolled from: a switch
+  // called off later keeps the page where it is then.
+  await page.evaluate(() => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    document.querySelector('.native-open').click()
+  })
+  await page.getByRole('button', { name: 'Exit fullscreen' }).click()
+  await expect.poll(() => page.evaluate(() => { window.scrollTo(0, 120); return scrollY })).toBe(120)
+  await page.evaluate(() => { for (const key of ['6', '5']) window.dispatchEvent(new KeyboardEvent('keydown', { key })) })
+  await page.waitForTimeout(600)
+  expect(await page.evaluate(() => scrollY)).toBe(120)
+  await page.setViewportSize({ width: 1440, height: 980 })
   // After the switch has committed, the same key is a new switch back, not a cancellation.
   await page.keyboard.press('6')
   await expect(page).toHaveURL(/#strata$/)
@@ -827,32 +966,286 @@ test('switching paradigm passes through the bare core, and reduced motion switch
   expect(frames.filter((frame) => frame.layer && frame.clear < 1)).toEqual([])
 })
 
-test('mobile gallery opens a safe uniformly scaled native surface in both orientations', async ({ browser, baseURL }) => {
+test('a phone opens each plate as the specimen itself: no device around it, on its own ground, at its own size', async ({ browser, baseURL }) => {
   const phone = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } })
   try {
     const page = await phone.newPage()
     await page.goto('./')
-    await page.getByRole('button', { name: 'Try Native Fullscreen OS' }).tap()
-    await expect(page.locator('.iphone')).toHaveCount(0)
-    for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }, { width: 639, height: 920 }, { width: 844, height: 390 }]) {
-      await page.setViewportSize(size)
-      await expect.poll(() => page.locator('.native-surface').evaluate((el) => {
-        const r = el.getBoundingClientRect()
-        const capsule = document.querySelector('.native-capsule').getBoundingClientRect()
-        const root = document.documentElement
-        return Math.abs(r.width / r.height - 377 / 836) < .0001 && r.top >= capsule.bottom - 1
-          && r.left >= -1 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1
-          && root.scrollWidth === innerWidth && root.scrollHeight === innerHeight
-      })).toBe(true)
+    // A keyboard is laid over the page, never made to shrink it: a field in the specimen is typed into
+    // with the specimen still at its size.
+    expect(await page.locator('meta[name="viewport"]').getAttribute('content')).toContain('interactive-widget=resizes-visual')
+    await expect(page.locator('.plate[data-plate]')).toHaveCount(names.length)
+    let stop = await recording(page)
+    await page.locator('.plate[data-plate="infinity"]').tap()
+    await settledOn(page, /#infinity$/)
+    let frames = (await stop()).filter((frame) => frame.layer)
+    // The plate flies onto the surface and develops there. Nothing of the paradigm shows before it lands,
+    // not even its ground: while the plate is in the air the screen is the lab's, and the strip reads on it.
+    const flying = frames.findIndex((frame) => frame.ghosts > 0)
+    expect(flying, 'the plate never took off').toBeGreaterThanOrEqual(0)
+    expect(frames.slice(0, flying).filter((frame) => frame.clear > .02)).toEqual([])
+    const airborne = frames.filter((frame) => frame.ghosts > 0)
+    expect(airborne.filter((frame) => frame.clear > .02)).toEqual([])
+    expect(airborne.filter((frame) => channels(frame.ground).join() !== '11,11,12')).toEqual([])
+    expect(airborne.filter((frame) => contrastOf(frame.strip, frame.ground) < 4.5)).toEqual([])
+    expect(frames.at(-1).clear).toBe(1)
+    // Landed: the paradigm's own ground, and the strip in its status ink.
+    const stage = page.locator('.bare-stage')
+    const strip = page.locator('.specimen-strip')
+    const computed = (locator, property) => locator.evaluate((element, property) => getComputedStyle(element)[property], property).then(channels)
+    await expect.poll(() => computed(stage, 'backgroundColor')).toEqual([255, 255, 255])
+    expect(await computed(strip, 'color')).toEqual([13, 13, 13])
+    // Nothing of a device is drawn: no frame, no clock, no island, no home bar, and no lab bar above the specimen.
+    await expect(page.locator('.iphone, .status-bar, .dynamic-island, .home-indicator, .lab-bar')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Native Fullscreen/ })).toHaveCount(0)
+    // Focus lands on the specimen, which is the first screen; the Design DNA printed below is not scrolled to.
+    // The strip is the first thing reached from it, and the band between its controls belongs to the specimen.
+    await expect(page.getByRole('region', { name: 'InfinityOS specimen' })).toBeFocused()
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+    await page.keyboard.press('Tab')
+    await expect(page.getByRole('button', { name: 'Index', exact: true })).toBeFocused()
+    expect(await page.evaluate(() => {
+      const index = document.querySelector('.specimen-strip > button').getBoundingClientRect()
+      const step = document.querySelector('.specimen-strip__step').getBoundingClientRect()
+      const band = document.querySelector('.specimen-strip').getBoundingClientRect()
+      return !!document.elementFromPoint((index.right + step.left) / 2, band.top + band.height / 2)?.closest('.bare-surface')
+    })).toBe(true)
+    // A fault plate is the lab's own ground: the strip reads on it as it does under the veil.
+    await page.locator('.bare-surface').evaluate((surface) => surface.append(Object.assign(document.createElement('section'), { className: 'specimen-fault' })))
+    expect(await computed(stage, 'backgroundColor')).toEqual([11, 11, 12])
+    expect(await computed(strip, 'color')).toEqual([233, 231, 225])
+    await page.locator('.bare-surface > .specimen-fault').evaluate((fault) => fault.remove())
+    // InfinityOS's rooms mirror their floor into the band. The strip's labels keep their own ground there.
+    for (const orb of [0, 1]) {
+      await page.locator('.infinity-orb').nth(orb).tap()
+      await expect(page.locator('.infinity-room')).toBeVisible()
+      await page.waitForTimeout(600)
+      expect(await stripContrast(page), `room ${orb}`).toBeGreaterThanOrEqual(4.5)
+      await page.keyboard.press('Escape')
+      await expect(page.locator('.infinity-room')).toHaveCount(0)
     }
+
+    const fit = () => page.locator('.bare-surface').evaluate((surface) => {
+      const r = surface.getBoundingClientRect()
+      const box = surface.parentElement.getBoundingClientRect()
+      const room = surface.closest('.bare-stage').getBoundingClientRect()
+      const band = document.querySelector('.specimen-strip').getBoundingClientRect()
+      const scale = r.height / 836
+      const across = box.width / 377
+      return {
+        aspect: Math.abs(r.width / r.height - 377 / 836) < .0001,
+        // At its own size, as an OS is on its screen: larger only to fill a larger screen, smaller only on
+        // a screen narrower than the surface.
+        scale: Math.abs(scale - Math.min(across, Math.max(1, Math.min(across, box.height / 836)))) < .002,
+        inside: r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= room.top - 1 && r.bottom <= room.bottom + 1,
+        // The strip lies in the band the paradigm keeps clear at its top.
+        band: Math.abs(band.top - r.top) < 1 && Math.abs(band.height - 44 * scale) < 1,
+        across: document.documentElement.scrollWidth === innerWidth,
+      }
+    })
+    const fitted = { aspect: true, scale: true, inside: true, band: true, across: true }
+    for (const size of [{ width: 390, height: 844 }, { width: 390, height: 664 }, { width: 320, height: 568 }, { width: 360, height: 780 }, { width: 932, height: 430 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(size)
+      await expect.poll(fit, { message: JSON.stringify(size) }).toEqual(fitted)
+      await expect(page.locator('.iphone')).toHaveCount(0)
+    }
+  } finally { await phone.close() }
+})
+
+test('on a phone every movement is played on the specimen, at the top, and the strip and the Design DNA move between plates', async ({ browser, baseURL }) => {
+  const phone = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 844, height: 390 } })
+  try {
+    const page = await phone.newPage()
+    await page.goto('./#quantum')
+    await expect(page.locator('.bare-surface .quantum-os')).toBeVisible()
+    // On its side the specimen is taller than the screen. A switch made from an open console, into a
+    // paradigm whose prompt takes the focus as it mounts, is played at the top and left there.
+    await page.keyboard.press('Control+k')
+    await expect(page.locator('.bare-surface .quantum-workspace')).toBeVisible()
+    let stop = await recording(page)
+    await page.keyboard.press('4')
+    await settledOn(page, /#telemetry$/)
+    let frames = (await stop()).filter((frame) => frame.layer && frame.clear < 1)
+    expect(frames.length, 'the switch never drew the core').toBeGreaterThan(0)
+    expect(frames.filter((frame) => frame.top !== 0)).toEqual([])
+    await expect(prompt(page)).toBeFocused()
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+    // And a plate opened from the index with the console still open lands at the top, where it is drawn.
+    await page.getByRole('button', { name: 'Index', exact: true }).tap()
+    await expect(page).not.toHaveURL(/#/)
+    await expect(page.locator('.plate-ghost')).toHaveCount(0)
+    stop = await recording(page)
+    await page.locator('.plate[data-plate="telemetry"]').tap()
+    await settledOn(page, /#telemetry$/)
+    frames = await stop()
+    const landing = frames.filter((frame) => frame.ghosts > 0).at(-1)
+    expect(landing?.ghostTop, 'the plate landed off the top of the screen').toBeGreaterThanOrEqual(-1)
+    expect(frames.filter((frame) => frame.layer && frame.top !== 0)).toEqual([])
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+    await page.keyboard.press('Escape')
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.locator('.field-node').nth(2).tap()
-    await page.getByRole('combobox', { name: 'Fullscreen theme' }).selectOption('wetware')
+
+    // The strip moves between plates through the core, and says which plate is now shown.
+    const live = page.locator('.specimen-strip [aria-live]')
+    stop = await recording(page)
+    await page.getByRole('button', { name: 'Next plate, 05 SpatialOS' }).tap()
+    await settledOn(page, /#spatial$/)
+    expect((await stop()).filter((frame) => frame.layer && frame.ink > .9).length, 'the strip skipped the core').toBeGreaterThan(0)
+    await expect(live).toHaveText('PL. 05 / 07 SpatialOS')
+
+    // The Design DNA is printed below the specimen, and reading goes on from it. A movement started down
+    // there is played on the specimen, brought back into view first: the core is never moved, or screened
+    // down, out of sight.
+    const atDna = () => page.locator('.focus-dna').evaluate((dna) => Math.round(Math.abs(dna.getBoundingClientRect().top)))
+    const toDna = async () => {
+      await page.getByRole('button', { name: 'DNA', exact: true }).tap()
+      await expect(page.locator('.focus-dna h1')).toBeFocused()
+      await expect.poll(atDna).toBeLessThanOrEqual(1)
+    }
+    await toDna()
+    stop = await recording(page)
+    await page.getByRole('button', { name: '06 StrataOS', exact: true }).tap()
+    await settledOn(page, /#strata$/)
+    frames = (await stop()).filter((frame) => frame.layer && frame.clear < 1)
+    expect(frames.length, 'the switch never drew the core').toBeGreaterThan(0)
+    expect(frames.filter((frame) => frame.top !== 0)).toEqual([])
+    // Held bare, the core has nothing of either paradigm around it, not SpatialOS's dark nor StrataOS's
+    // paper: the ground is the lab's too. (A frame that is ink over nine tenths of the surface has its
+    // veil at .96 or more, so its ground is within 10 of the lab's ink.)
+    const held = frames.filter((frame) => frame.ink > .9)
+    expect(held.length, 'the core was never held bare').toBeGreaterThan(0)
+    expect(held.filter((frame) => channels(frame.ground).some((channel, index) => Math.abs(channel - [11, 11, 12][index]) > 10))).toEqual([])
+    await expect(live).toHaveText('PL. 06 / 07 StrataOS')
+    // Back returns to SpatialOS where its Design DNA was being read, and reading goes on from there.
+    await page.goBack()
+    await expect(page).toHaveURL(/#spatial$/)
+    await expect.poll(atDna).toBeLessThanOrEqual(2)
+    await expect(page.locator('.focus-dna h1')).toBeFocused()
+
+    // Asked for while a movement is still under way, the DNA is read at once.
+    await page.getByRole('button', { name: 'Next plate, 06 StrataOS' }).tap()
+    await page.waitForTimeout(150)
+    await page.getByRole('button', { name: 'DNA', exact: true }).tap()
+    await settledOn(page, /#strata$/)
+    await expect.poll(atDna).toBeLessThanOrEqual(1)
+    await expect(page.locator('.focus-dna h1')).toBeFocused()
+    // While the page is still gliding down to the DNA, a switch is played at the top all the same.
+    await page.evaluate(() => window.scrollTo(0, 0))
+    stop = await recording(page)
+    await page.getByRole('button', { name: 'DNA', exact: true }).tap()
+    await page.waitForTimeout(100)
+    await page.keyboard.press('2')
+    await settledOn(page, /#wetware$/)
+    frames = (await stop()).filter((frame) => frame.layer && frame.clear < 1)
+    expect(frames.length, 'the switch never drew the core').toBeGreaterThan(0)
+    expect(frames.filter((frame) => frame.top !== 0)).toEqual([])
+
+    // The paradigm works as itself: its Neural Search organ opens and answers.
+    await page.locator('.wet-cell').nth(2).tap()
     await page.getByRole('button', { name: /Orbital Memory/ }).tap()
     await expect(page.getByText('Memory addressed by orbital phase and radius.', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Exit fullscreen' }).tap()
     await expect(page.locator('.wet-organ h3')).toHaveText('Neural Search')
+    await toDna()
+    stop = await recording(page)
+    await page.getByRole('button', { name: 'All plates' }).tap()
+    await expect(page).not.toHaveURL(/#/)
+    await expect(page.locator('.plate-ghost')).toHaveCount(0)
+    frames = await stop()
+    // Screened down where it is seen, and flown home from where it was drawn.
+    const screened = frames.filter((frame) => frame.hash === '#wetware' && frame.layer && frame.clear < 1)
+    expect(screened.length, 'the specimen was never screened down').toBeGreaterThan(0)
+    expect(screened.filter((frame) => frame.top !== 0)).toEqual([])
+    const flight = frames.find((frame) => frame.ghosts > 0)
+    expect(flight?.ghostTop, 'the plate left from above the screen').toBeGreaterThanOrEqual(-1)
+    await expect(page.locator('.plate[data-plate="wetware"] .plate-raster')).toBeVisible()
   } finally { await phone.close() }
+})
+
+test('on a phone at least as wide as the specimen, every control that works at its own size still works as drawn', async ({ browser, baseURL }) => {
+  // The shortest screens a phone gives: in portrait under the browser's bars, and on its side. (A screen
+  // narrower than 377 px draws the specimen at its width, and the paradigms' smallest controls with it.)
+  const phone = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, reducedMotion: 'reduce', viewport: { width: 390, height: 664 } })
+  try {
+    const page = await phone.newPage()
+    for (const size of [{ width: 390, height: 664 }, { width: 844, height: 390 }]) {
+      await page.setViewportSize(size)
+      await page.goto('./#field')
+      for (const [index, name] of names.entries()) {
+        if (index) await page.keyboard.press(String(index + 1))
+        await expect(page.locator(`.bare-surface ${surfaces[index]}`)).toBeVisible()
+        expect(await brokenTargets(page), `${name} at ${size.width} × ${size.height}`).toEqual([])
+        // The console is open in every paradigm's own tool; QuantumOS's prompt outlives it, so the tool is waited for.
+        const console = page.locator(`.bare-surface ${tools[index]}`)
+        await page.keyboard.press('Control+k')
+        await expect(console).toBeVisible()
+        expect(await brokenTargets(page), `${name}'s console at ${size.width} × ${size.height}`).toEqual([])
+        await page.keyboard.press('Escape')
+        await expect(console).toHaveCount(0)
+      }
+    }
+    // With nothing animated, a plate opened from the index with the console open still lands at the top,
+    // with the focus: a prompt that takes the focus as it mounts does not scroll the page to itself.
+    await page.setViewportSize({ width: 390, height: 664 })
+    await page.goto('./#field')
+    await page.keyboard.press('Control+k')
+    await expect(page.locator('.bare-surface .field-workspace')).toBeVisible()
+    await page.getByRole('button', { name: 'Index', exact: true }).tap()
+    await page.locator('.plate[data-plate="telemetry"]').tap()
+    await expect(page).toHaveURL(/#telemetry$/)
+    await expect(page.getByRole('region', { name: 'TelemetryOS specimen' })).toBeFocused()
+    expect(await page.evaluate(() => scrollY)).toBe(0)
+  } finally { await phone.close() }
+})
+
+test('only a phone loses the device: a tablet keeps it through its keyboard, a narrow or zoomed window keeps it at its width', async ({ browser, baseURL }) => {
+  // A touch screen too large to be a phone keeps the device, and a keyboard raised over it changes nothing.
+  const tablet = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 1280, height: 660 }, screen: { width: 1280, height: 800 } })
+  try {
+    const page = await tablet.newPage()
+    await page.goto('./#field')
+    await expect(page.locator('.focus-device .iphone')).toHaveCount(1)
+    await page.locator('.field-node').nth(2).tap()
+    const search = page.getByRole('textbox', { name: 'Search nodes' })
+    await search.tap()
+    await expect(search).toBeFocused()
+    const field = await search.elementHandle()
+    await raiseKeyboard(page, 350)
+    await expect(page.locator('.focus-device .iphone')).toHaveCount(1)
+    await expect(page.locator('.bare-stage')).toHaveCount(0)
+    await page.keyboard.type('or')
+    expect(await field.evaluate((element) => element.isConnected && element === document.activeElement && element.value)).toBe('or')
+  } finally { await tablet.close() }
+
+  // A desktop window at 200 % zoom is 720 × 395 CSS px under a mouse. It keeps the device, drawn at its
+  // width, so zooming in still enlarges the specimen instead of fitting it to the shrinking height.
+  const zoomed = await browser.newContext({ baseURL, viewport: { width: 720, height: 395 } })
+  try {
+    const page = await zoomed.newPage()
+    await page.goto('./#field')
+    await expect(page.locator('.focus-device .iphone')).toHaveCount(1)
+    await expect(page.locator('.bare-stage')).toHaveCount(0)
+    await expect.poll(() => page.locator('.iphone-screen').evaluate((screen) => screen.getBoundingClientRect().width)).toBeGreaterThan(395 * 377 / 836 * 1.5)
+  } finally { await zoomed.close() }
+
+  // A foldable closed while in fullscreen comes back as a phone, which has no fullscreen control to return
+  // focus to: the specimen takes it.
+  const foldable = await browser.newContext({ baseURL, hasTouch: true, isMobile: true, viewport: { width: 1280, height: 800 } })
+  try {
+    const page = await foldable.newPage()
+    await page.goto('./#field')
+    // Folded shut, with nothing else touched, it is a phone and the device goes; opened, it comes back.
+    await expect(page.locator('.focus-device .iphone')).toHaveCount(1)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.locator('.bare-stage')).toHaveCount(1)
+    await expect(page.locator('.focus-device')).toHaveCount(0)
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await expect(page.locator('.focus-device .iphone')).toHaveCount(1)
+    await page.getByRole('button', { name: 'Native Fullscreen' }).tap()
+    await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('region', { name: 'FieldOS specimen' })).toBeFocused()
+  } finally { await foldable.close() }
 })
 
 test('the static Pages document exposes a fetchable 1200 × 630 preview before JavaScript runs', async ({ request }) => {
