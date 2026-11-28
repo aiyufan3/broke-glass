@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { channels, modules, nodes, sessionTime, tracks } from '../data/osData'
 import type { ModuleId } from '../data/osData'
@@ -327,5 +327,10 @@ export function useCommandLine() {
     input.value = items[index] ?? draft.current
     input.setSelectionRange(input.value.length, input.value.length)
   }
-  return { onKeyDown, onInput: resetHistory, resetHistory }
+  /**
+   * For a prompt that takes the focus as it mounts, in place of autoFocus: focusing never scrolls the
+   * page to it, so a paradigm that mounts with its console open does not carry the page away.
+   */
+  const takeFocus = useCallback((input: HTMLInputElement | null) => { input?.focus({ preventScroll: true }) }, [])
+  return { onKeyDown, onInput: resetHistory, resetHistory, takeFocus }
 }

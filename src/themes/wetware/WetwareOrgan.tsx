@@ -83,7 +83,7 @@ function ConsoleOrgan({ onSignal }: { onSignal: () => void }) {
       line.resetHistory()
       feed.value = ''
       onSignal()
-    }}><input autoFocus onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="feed" aria-label="Console command" placeholder="Feed the nucleus" autoComplete="off" /><button type="submit">Send</button></form>
+    }}><input ref={line.takeFocus} onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="feed" aria-label="Console command" placeholder="Feed the nucleus" autoComplete="off" /><button type="submit">Send</button></form>
     <div className="wet-vesicles" role="group" aria-label="Quick commands">
       {quickCommands.map((command) => <button type="button" key={command} onClick={() => { actions.execute(command); onSignal() }}>{command}</button>)}
     </div>

@@ -35,7 +35,7 @@ function BayConsole() {
       actions.execute(entry.value)
       line.resetHistory()
       entry.value = ''
-    }}><label>CMD <input autoFocus onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" autoComplete="off" placeholder="help" /></label><button type="submit" aria-label="Run command">↵</button></form>
+    }}><label>CMD <input ref={line.takeFocus} onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" autoComplete="off" placeholder="help" /></label><button type="submit" aria-label="Run command">↵</button></form>
     <div className="tel-quick" role="group" aria-label="Quick commands">
       {quickCommands.map((command) => <button type="button" key={command} onClick={() => actions.execute(command)}>{command}</button>)}
     </div>

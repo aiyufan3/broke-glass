@@ -47,7 +47,7 @@ function FieldConsole() {
       input.value = ''
     }}>
       <span aria-hidden="true">›</span>
-      <input autoFocus onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Enter command" autoComplete="off" />
+      <input ref={line.takeFocus} onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Enter command" autoComplete="off" />
       <button type="submit" aria-label="Run command">⏎</button>
     </form>
   </>

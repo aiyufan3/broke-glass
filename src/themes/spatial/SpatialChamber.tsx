@@ -47,7 +47,7 @@ function ConsolePlinth() {
       line.resetHistory()
       command.value = ''
     }}>
-      <input autoFocus onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Enter command" autoComplete="off" /><button type="submit">Run</button>
+      <input ref={line.takeFocus} onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Enter command" autoComplete="off" /><button type="submit">Run</button>
     </form>
     <div className="spatial-keys" role="group" aria-label="Quick commands">
       {quickCommands.map((command) => <button type="button" key={command} onClick={() => actions.execute(command)}>{command}</button>)}

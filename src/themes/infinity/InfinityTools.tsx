@@ -50,7 +50,7 @@ function InfinityConsole() {
       line.resetHistory()
       input.value = ''
     }}>
-      <input autoFocus onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Seed a command" autoComplete="off" />
+      <input ref={line.takeFocus} onKeyDown={line.onKeyDown} onInput={line.onInput} data-os-command name="command" aria-label="Console command" placeholder="Seed a command" autoComplete="off" />
       <button type="submit" aria-label="Run command">Seed</button>
     </form>
     <div className="infinity-quick" role="group" aria-label="Quick commands">
