@@ -87,12 +87,22 @@ function seats(surface: Element, count: number): Seat[] {
  * draws the two transitions the lab has: a plate developing into its paradigm (and back), and the
  * core's samples migrating from one paradigm's geometry to the next.
  */
-const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit({ veiled = false }, ref) {
+const Transit = forwardRef<TransitHandle, {
+  veiled?: boolean
+  /**
+   * Told how much of the surface the lab's ground covers, 0 to 1, as it changes: a viewport that shows
+   * ground around the surface lays the same amount of the lab's own there.
+   */
+  onVeil?: (amount: number) => void
+}>(function Transit({ veiled = false, onVeil }, ref) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const turn = useRef(0)
   const veiledAtMount = useRef(veiled)
   /** Whether the layer hides the specimen, wholly or partly: every movement starts from what is on it, never from a guess. */
   const covered = useRef(false)
+  const report = useRef(onVeil)
+  useLayoutEffect(() => { report.current = onVeil })
+  const veilBy = (amount: number) => report.current?.(amount)
 
   // Sized, and veiled when a plate is on its way, before the specimen under it is first painted.
   useLayoutEffect(() => {
@@ -108,11 +118,13 @@ const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit
       context.fillStyle = LAB_INK
       context.fillRect(0, 0, SURFACE.width, SURFACE.height)
       covered.current = true
+      veilBy(1)
       const waiting = turn.current
       orphan = window.setTimeout(() => {
         if (turn.current !== waiting) return
         context.clearRect(0, 0, SURFACE.width, SURFACE.height)
         covered.current = false
+        veilBy(0)
       }, ORPHAN_MS)
     }
     // Unmounting takes the layer away from whatever transition is running.
@@ -128,6 +140,7 @@ const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit
     const wipe = () => {
       context()?.clearRect(0, 0, SURFACE.width, SURFACE.height)
       covered.current = false
+      veilBy(0)
     }
 
     // Runs `frame` from 0 to 1 over `ms`. Resolves false if another transition has taken the layer.
@@ -163,6 +176,8 @@ const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit
       const ctx = context()
       if (ctx) paintPlate(ctx, levels, SURFACE.width, SURFACE.height, { punch: true, gain, tint })
       covered.current = !(tint <= 0 && gain >= OPEN)
+      // The plate's ground gives way as its holes open.
+      veilBy(clamp(1 - gain))
     }
 
     return {
@@ -173,6 +188,7 @@ const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit
         ctx.fillStyle = LAB_INK
         ctx.fillRect(0, 0, SURFACE.width, SURFACE.height)
         covered.current = true
+        veilBy(1)
       },
       async develop(levels) {
         covered.current = true
@@ -209,6 +225,7 @@ const Transit = forwardRef<TransitHandle, { veiled?: boolean }>(function Transit
 
         const draw = (from: Seat[], to: Seat[], travel: number, veil: number, legend: number, presence: number) => {
           covered.current = veil > .01
+          veilBy(veil)
           ctx.clearRect(0, 0, SURFACE.width, SURFACE.height)
           ctx.globalAlpha = veil
           ctx.fillStyle = LAB_INK

@@ -13,7 +13,7 @@ export default function IPhoneFrame({ children, statusBar }: { children: ReactNo
       <span className="hardware-button hardware-button--action" aria-hidden="true" />
       <span className="hardware-button hardware-button--volume" aria-hidden="true" />
       <span className="hardware-button hardware-button--power" aria-hidden="true" />
-      <div className="iphone-screen" data-status={statusBar}>
+      <div className="iphone-screen" data-status={statusBar} data-specimen-screen>
         <div className="status-bar" aria-label={`${time}, connected, full battery`}>
           <time dateTime={time}>{time}</time>
           <div className="dynamic-island" aria-hidden="true"><span /></div>

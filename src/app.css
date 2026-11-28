@@ -88,7 +88,6 @@ button { cursor: pointer; }
 /* A plate in flight between the index and the device, and the layer inside the device that every change of view passes through. */
 .plate-ghost { position: fixed; z-index: 60; transform-origin: 0 0; pointer-events: none; }
 .transit { position: absolute; z-index: 9; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.native-banner { display: none; }
 
 .focus { padding-bottom: 52px; }
 .focus-bar { min-height: 52px; gap: 14px; border-bottom: 1px solid var(--lab-rule); }
@@ -246,6 +245,56 @@ button { cursor: pointer; }
 }
 .native-surface { position: absolute; left: 50%; top: 50%; width: 377px; height: 836px; overflow: hidden; transform: translate(-50%, -50%) scale(var(--native-scale)); }
 
+/*
+ * On a phone there is no device. The surface is fitted whole into the first screen and set on the
+ * paradigm's own ground; the lab's strip lies in the 44 px band every paradigm keeps clear at its top,
+ * in that paradigm's status ink, and the Design DNA is printed underneath, like the label under an object.
+ * `--veil` (0 to 1) is how much of the surface the lab's layer covers; around it, the ground and the
+ * strip give way to the lab's own ink and bone by the same amount.
+ */
+.focus--phone { padding-bottom: 44px; }
+.bare-stage {
+  --strip-ink: #f7f9fc;
+  --here: color-mix(in srgb, var(--lab-ink) calc(var(--veil) * 100%), var(--ground));
+  position: relative; min-height: 100svh; overflow: hidden; background-color: var(--here);
+  /* Taller than the screen only while the surface is held at its floor. */
+  height: calc(var(--surface-height) + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
+}
+.bare-stage[data-ink="ink"] { --strip-ink: #0d0d0d; }
+/* A fault plate is the lab's own ground: the strip reads on it as it does under the veil. */
+.bare-stage:has(.specimen-fault) { --veil: 1 !important; }
+/* Focus lands on the region when a plate opens; the specimen itself is the sign of where it is. */
+.bare-stage:focus { outline: none; }
+.bare-fit {
+  position: absolute; top: env(safe-area-inset-top, 0px); left: env(safe-area-inset-left, 0px); right: env(safe-area-inset-right, 0px);
+  /* One screen, whatever the stage has grown to: the surface is fitted to what one screen shows. */
+  height: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+.bare-surface {
+  position: absolute; left: 50%; top: 0; width: 377px; height: 836px; overflow: hidden;
+  transform: translateX(-50%) scale(var(--surface-scale)); transform-origin: 50% 0;
+}
+.specimen-strip {
+  position: absolute; z-index: 10; inset: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  /* The band, scaled with the surface. */
+  height: calc(44px * var(--surface-scale)); padding: 0 10px;
+  color: color-mix(in srgb, var(--lab-bone) calc(var(--veil) * 100%), var(--strip-ink));
+  /*
+   * Its own ground: a scrim of what lies around the surface, nearly opaque behind the labels and gone
+   * below them. Over anything a paradigm paints into the band (InfinityOS's rooms mirror their floor
+   * there) the labels keep their contrast; over a band that is the ground already, it is not seen.
+   */
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--here) 85%, transparent) 66%, transparent);
+  font: 600 10px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase;
+  /* Only the controls take a touch; the rest of the band belongs to the specimen under it. */
+  pointer-events: none;
+}
+.specimen-strip button { pointer-events: auto; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 44px; height: 100%; padding: 0 4px; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; }
+.specimen-strip button:focus-visible { outline: 1px solid currentColor; outline-offset: -4px; }
+.specimen-strip__step { display: flex; align-items: center; height: 100%; }
+.specimen-strip__step button { min-width: 40px; font-size: 14px; }
+.focus-dna { scroll-margin-top: 0; }
+
 @media (max-width: 1100px) {
   .page-width { width: calc(100% - 56px); }
   .plates-scroll { margin-inline: -28px; padding-inline: 28px; overflow-x: auto; scrollbar-color: var(--lab-rule-strong) var(--lab-ink); scroll-snap-type: x proximity; }
@@ -276,13 +325,6 @@ button { cursor: pointer; }
   .dna { order: 1; max-width: 520px; }
   .dna-switch { grid-template-columns: repeat(var(--switch-count), minmax(0, 1fr)); }
   .dna-switch button { padding: 6px 4px 7px; }
-}
-@media (max-width: 639.98px) {
-  .native-banner {
-    display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 44px; margin-bottom: 24px; padding: 0 12px;
-    border: 1px solid var(--lab-rule-strong); color: var(--lab-bone);
-    font: 500 11px/1 var(--lab-mono); letter-spacing: .14em; text-transform: uppercase;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
