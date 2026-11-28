@@ -67,10 +67,11 @@ The lab inside is called Next-Era Y3K. Open it and pick a plate.
 | **Cross-paradigm sync** | Console, Telemetry, Neural Search and Media exist in all seven, each in its own geometry. Run `spike` in one console, switch paradigm, and the same timestamped event is in the log while that engine takes the load. Also: `help` `status` `scan` `clear`. |
 | **Design DNA** | Three live sliders per paradigm. Each one changes what the engine draws. The release suite fails if one stops. Settings survive a reload. |
 | **Copy Paradigm Prompt** | Copies the paradigm's grammar, palette and current slider values as a prompt. |
-| **Native fullscreen** | Edge to edge, uniformly scaled, desktop and phone. On a phone the index puts it one tap away. |
+| **Native fullscreen** | On a desktop or a tablet, edge to edge and uniformly scaled, with the plate number and a switcher in one capsule. |
+| **On a phone** | A touch screen whose short side is 520 px or less. No device is drawn: no frame, no clock, no island, no home bar. A plate opens as the specimen itself, on its own ground and at its own size, as an OS is on its screen: a shorter screen scrolls, and on a screen at least 377 px wide every control works at the size it was designed for. A narrower one (a 360 px Android phone) draws it at its width. The lab's strip lies in the band the paradigm keeps clear, in its status ink on a scrim of its ground: back to the index, the plates either side, and the Design DNA, printed below like the label under an object. A tablet, or a narrow or zoomed desktop window, keeps the device. |
 | **Plate index** | The home page is the silhouette test. Each paradigm is shown as it was measured, a 13 × 29 halftone of its home screen in grey under the blur, with a plate number and no name. Choose by mass. A plate flies to the device and develops into its paradigm; <kbd>Esc</kbd> screens it back onto its plate. |
 | **Core migration** | Switching paradigm passes through the bare core: the 48 latency samples leave the first geometry, line up as the raw trace with the last log line and the playhead, and seat in the next. It is the one thing all seven share, shown once with nothing around it. |
-| **Keys** | <kbd>1</kbd>–<kbd>7</kbd> open a plate from the index, or switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the gallery |
+| **Keys** | <kbd>1</kbd>–<kbd>7</kbd> open a plate from the index, or switch paradigm · <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd> console · <kbd>↑</kbd> <kbd>↓</kbd> command history · <kbd>Esc</kbd> close the tool, then fullscreen, then back to the index |
 
 <details>
 <summary><strong>Contribute Paradigm #08</strong></summary>
@@ -92,12 +93,12 @@ src/themes/<id>/
 src/themes/index.ts       one line in `surfaces`
 ```
 
-`surfaces` is typed `Record<ParadigmId, …>`. The build fails until every registered specification has a surface. Index order, the switcher, the fullscreen selector and the number keys follow the registry.
+`surfaces` is typed `Record<ParadigmId, …>`. The build fails until every registered specification has a surface. Index order, the switcher, the fullscreen selector, the phone strip and the number keys follow the registry.
 
 **Rules**
 
 1. Import `src/data/*`, `src/state/*` and your own folder. Nothing from another theme. Nothing from `src/components`. `npm run check:boundaries` enforces this with dependency-cruiser (`.dependency-cruiser.cjs`); `tests/unit/contract.test.ts` fails any selector or `@keyframes` in your CSS that does not start from a class prefixed with your id or an abbreviation of it (`tel-` for `telemetry`), any CSS `@import`, and any `import.meta.glob` or `new URL(…, import.meta.url)` that reaches outside your folder.
-2. Fill the 377 × 836 surface. The status bar is drawn over the top 44 px and the home indicator over the bottom 12 px.
+2. Fill the 377 × 836 surface. The top 44 px are drawn over in your `statusBar` ink: by the status bar in the device, and on a phone by the lab's strip, on a scrim of your first colour. On a phone that colour is also the ground around the surface. The device's home indicator is drawn over the bottom 12 px.
 3. Drive the engine with `useFrameLoop(host, interactive, draw)`. A frame with `still: true` must render the settled state: it is issued for non-interactive mounts, hidden tabs, off-screen hosts and `prefers-reduced-motion`, and it is the frame `npm run silhouettes` measures.
 4. Read state with `useOS(selector, interactive)` and, inside a frame loop, `useOSSnapshot(interactive)`. Select the smallest slice. With `interactive` false neither subscribes.
 5. `state.impulse` increments on every command, scan, spike and inspection. Give it a physical response.
@@ -193,7 +194,7 @@ Every graphic on this page is generated. Nothing is drawn by hand and nothing is
 npm run silhouettes   # scripts/silhouettes.json: luminance of each plate under the blur
 npm run posters       # docs/*.svg and public/og-preview.svg, light and dark
 npm run og            # posters, then public/og-preview.png rasterized from the SVG
-npm run screens -- <dir>   # 2× PNGs: index, seven focus views, mobile, each paradigm at rest and under load
+npm run screens -- <dir>   # 2× PNGs: index, seven focus views, a phone's index and specimen, each paradigm at rest and under load
 ```
 
 The index capture above is `00-gallery-overview@2x.png` from `npm run screens`. The social tags point at the PNG. Crawlers do not render SVG.

@@ -166,13 +166,14 @@ try {
   }
   await stage.close()
 
-  const phone = await browser.newPage({ viewport: PHONE, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
+  // On a phone there is no device: the index, then a plate opened as the specimen itself. Reduced motion
+  // switches the view at once, so the capture is the settled specimen, not a frame of its arrival.
+  const phone = await browser.newPage({ viewport: PHONE, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: 'reduce' })
   await open(phone)
-  await capture(phone, '06-mobile-gallery-banner@2x.png')
-  await phone.getByRole('button', { name: 'Try Native Fullscreen OS' }).tap()
-  await phone.getByRole('combobox', { name: 'Fullscreen theme' }).selectOption('wetware')
+  await capture(phone, 'mobile-1-index@2x.png')
+  await phone.locator('.plate[data-plate="wetware"]').tap()
   await phone.waitForTimeout(1200)
-  await capture(phone, '07-mobile-native-fullscreen@2x.png')
+  await capture(phone, 'mobile-2-specimen@2x.png')
   await phone.close()
 
   for (const file of written) console.log(`Wrote ${file}`)
